@@ -16,6 +16,11 @@
 
 # SECTION 1: INSTALL & LOAD PACKAGES --------------------------
 
+# Set default CRAN mirror for non-interactive mode
+if (!interactive() && is.null(getOption("repos")[["CRAN"]])) {
+  options(repos = c(CRAN = "https://cran.rstudio.com/"))
+}
+
 # List of packages needed
 required_packages <- c("readxl", "ggplot2", "dplyr", "tidyr", 
                        "corrplot", "car", "psych", "ggpubr", "rstatix")
@@ -36,7 +41,7 @@ lapply(required_packages, library, character.only = TRUE)
 # setwd("path_to_your_directory")
 
 # Load the data
-data <- read_excel("Data_Table.xlsx")
+data <- read_excel("Data/ClinicalData.xlsx")
 
 # SECTION 3: DATA STRUCTURE CHECK -----------------------------
 
