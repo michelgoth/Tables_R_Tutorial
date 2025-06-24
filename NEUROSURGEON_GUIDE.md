@@ -321,7 +321,7 @@ source("R/Lesson6.R")
 
 ## **You're Ready to Start!**
 
-Remember: **Every expert was once a beginner**. The neurosurgeons who created this resource started exactly where you are now. With dedication and this structured approach, you'll be analyzing clinical data like a pro in no time.
+Remember: **Every expert was once a beginner**. Those who created this resource started exactly where you are now. With dedication and this structured approach, you'll be analyzing clinical data like a pro in no time.
 
 **Next Step**: Install R and RStudio, then run `source("R/setup.R")`
 
