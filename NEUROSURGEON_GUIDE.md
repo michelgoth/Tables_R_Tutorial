@@ -1,11 +1,11 @@
-# 🧠 **Clinical Data Analysis for Neurosurgeons**
+# **Clinical Data Analysis**
 ## Zero-Coding Experience Guide
 
-> **A neurosurgeon-friendly approach to clinical data analysis using R**
+> **A beginner-friendly approach to clinical data analysis using R**
 
 ---
 
-## 🎯 **Who This Guide Is For**
+## **Who This Guide Is For**
 
 - **Clinical neurosurgeons** with zero programming experience
 - **Neurosurgery residents** wanting to analyze their own data
@@ -14,17 +14,17 @@
 
 ---
 
-## 🚀 **Getting Started: Your Options**
+## **Getting Started: Your Options**
 
 ### **Option 1: RStudio (Recommended for Beginners)**
 Think of RStudio as "Microsoft Word for data analysis" - it's a user-friendly interface for R.
 
 **Why RStudio?**
-- ✅ Point-and-click file management
-- ✅ Visual data viewer (like Excel)
-- ✅ Built-in help system
-- ✅ One-click script execution
-- ✅ Professional-looking output
+- Point-and-click file management
+- Visual data viewer (like Excel)
+- Built-in help system
+- One-click script execution
+- Professional-looking output
 
 **Getting RStudio:**
 1. Download R from: https://www.r-project.org/
@@ -35,10 +35,10 @@ Think of RStudio as "Microsoft Word for data analysis" - it's a user-friendly in
 A menu-driven interface that lets you analyze data without writing code.
 
 **Why R Commander?**
-- ✅ No coding required
-- ✅ Familiar menu structure
-- ✅ Built-in statistical tests
-- ✅ Visual output
+- No coding required
+- Familiar menu structure
+- Built-in statistical tests
+- Visual output
 
 **Getting R Commander:**
 ```r
@@ -51,17 +51,17 @@ library(Rcmdr)
 A free, modern statistical software with a beautiful interface.
 
 **Why Jamovi?**
-- ✅ Completely visual interface
-- ✅ Built specifically for clinical research
-- ✅ Publication-ready output
-- ✅ No coding required
+- Completely visual interface
+- Built specifically for clinical research
+- Publication-ready output
+- No coding required
 
 **Getting Jamovi:**
 Download from: https://www.jamovi.org/
 
 ---
 
-## 📚 **R Basics for Neurosurgeons**
+## **R Basics**
 
 ### **Think of R Like Medical Terminology**
 
@@ -101,7 +101,7 @@ plot(data$Age, data$OS)
 
 ---
 
-## 🏥 **Clinical Workflow: Step-by-Step**
+## **Clinical Workflow: Step-by-Step**
 
 ### **Step 1: Setting Up Your Environment**
 ```r
@@ -143,7 +143,7 @@ source("R/Lesson1.R")
 
 ---
 
-## 🧬 **Clinical Applications by Specialty**
+## **Clinical Applications by Specialty**
 
 ### **Tumor Analysis**
 ```r
@@ -174,7 +174,7 @@ source("R/Lesson1.R")
 
 ---
 
-## 🎓 **Learning Path for Neurosurgeons**
+## **Learning Path**
 
 ### **Week 1: Foundation**
 - **Day 1-2**: Install R and RStudio, run setup script
@@ -205,7 +205,7 @@ source("R/Lesson1.R")
 
 ---
 
-## 🛠️ **Common Clinical Scenarios**
+## **Common Clinical Scenarios**
 
 ### **Scenario 1: "I want to compare survival between IDH mutant and wildtype patients"**
 
@@ -239,7 +239,7 @@ source("R/Lesson6.R")
 
 ---
 
-## 🚨 **Troubleshooting for Neurosurgeons**
+## **Troubleshooting**
 
 ### **"I'm getting an error message"**
 1. **Don't panic** - errors are normal, even for experienced users
@@ -261,20 +261,7 @@ source("R/Lesson6.R")
 
 ---
 
-## 🎯 **Success Stories**
-
-### **Dr. Sarah Chen, Neurosurgery Resident**
-> "I had zero coding experience but needed to analyze my glioblastoma data. This resource taught me everything from basic statistics to survival analysis. Now I can run my own analyses and create publication-ready figures."
-
-### **Dr. Michael Rodriguez, Neurosurgeon**
-> "The clinical context made all the difference. Instead of learning abstract programming concepts, I learned how to answer real clinical questions with my own data."
-
-### **Dr. Emily Watson, Neurosurgery Fellow**
-> "The step-by-step approach was perfect. I went from being intimidated by R to confidently analyzing complex clinical datasets in just a few weeks."
-
----
-
-## 🚀 **Getting Help**
+## **Getting Help**
 
 ### **Built-in Resources**
 - **Troubleshooting Guide**: `docs/troubleshooting.md`
@@ -293,7 +280,7 @@ source("R/Lesson6.R")
 
 ---
 
-## 🏆 **Your Success Checklist**
+## **Your Success Checklist**
 
 ### **Before You Start**
 - [ ] R installed (version 4.0 or higher)
@@ -321,7 +308,7 @@ source("R/Lesson6.R")
 
 ---
 
-## 💡 **Pro Tips for Neurosurgeons**
+## **Pro Tips**
 
 1. **Start Small**: Don't try to learn everything at once
 2. **Use Real Data**: Practice with your own clinical data
@@ -332,10 +319,10 @@ source("R/Lesson6.R")
 
 ---
 
-## 🎉 **You're Ready to Start!**
+## **You're Ready to Start!**
 
 Remember: **Every expert was once a beginner**. The neurosurgeons who created this resource started exactly where you are now. With dedication and this structured approach, you'll be analyzing clinical data like a pro in no time.
 
 **Next Step**: Install R and RStudio, then run `source("R/setup.R")`
 
-**Good luck, and happy analyzing!** 🧠📊 
+**Good luck, and happy analyzing!**
