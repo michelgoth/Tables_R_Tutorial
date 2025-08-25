@@ -48,6 +48,15 @@ load_clinical_data <- function(path = "Data/ClinicalData.xlsx") {
     if (col %in% names(df)) df[[col]] <- as.factor(df[[col]])
   }
 
+  # Convert literal "NA" factor levels to actual NA to avoid plotting as a category
+  for (col in factorize) {
+    if (col %in% names(df)) {
+      tmp <- as.character(df[[col]])
+      tmp[tmp == "NA" | tmp == "Unknown" | tmp == "Not Available"] <- NA
+      df[[col]] <- droplevels(factor(tmp))
+    }
+  }
+
   # Basic validation for survival analysis
   if (all(c("OS", "Censor") %in% names(df))) {
     if (any(df$OS < 0, na.rm = TRUE)) warning("OS contains negative values; verify time units (days expected)")
@@ -76,6 +85,15 @@ save_plot_both <- function(plot_obj, base_filename, path = "plots", width = 8, h
   ggplot2::ggsave(png_path, plot = plot_obj, width = width, height = height, dpi = dpi)
   ggplot2::ggsave(pdf_path, plot = plot_obj, width = width, height = height)
   invisible(list(png = png_path, pdf = pdf_path))
+}
+
+
+# filter_complete_cases: drop rows with NA in specified columns (safe for missing cols)
+filter_complete_cases <- function(df, cols) {
+  use_cols <- cols[cols %in% names(df)]
+  if (length(use_cols) == 0) return(df)
+  cc <- stats::complete.cases(df[, use_cols, drop = FALSE])
+  df[cc, , drop = FALSE]
 }
 
 

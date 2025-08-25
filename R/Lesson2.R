@@ -8,6 +8,7 @@ source("R/utils.R")
 load_required_packages(c("readxl", "ggplot2", "dplyr"))
 
 data <- load_clinical_data("Data/ClinicalData.xlsx")
+data_age_gender <- filter_complete_cases(data, c("Age", "Gender"))
 
 # ===============================================================
 # LESSON 2: DESCRIPTIVE STATISTICS & DISTRIBUTIONS
@@ -39,8 +40,8 @@ if ("IDH_mutation_status" %in% names(data)) print(table(data$IDH_mutation_status
 
 # SECTION 2: VISUALIZE DISTRIBUTIONS ---------------------------
 
-if (all(c("Age", "Gender") %in% names(data))) {
-  p <- ggplot(data, aes(x = Age, fill = Gender)) +
+if (all(c("Age", "Gender") %in% names(data_age_gender))) {
+  p <- ggplot(data_age_gender, aes(x = Age, fill = Gender)) +
     geom_histogram(binwidth = 5, alpha = 0.6, position = "identity") +
     theme_minimal() +
     labs(title = "Age Distribution by Gender", x = "Age", y = "Count")

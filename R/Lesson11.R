@@ -7,6 +7,7 @@ source("R/utils.R")
 load_required_packages(c("readxl", "ggplot2"))
 
 data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- droplevels(data)
 
 # ===============================================================
 # LESSON 11: MULTIVARIATE ANALYSIS (ANOVA, MANOVA)
@@ -20,6 +21,7 @@ cat("Available variables:", paste(names(data), collapse = ", "), "\n\n")
 
 if (all(c("OS", "Grade") %in% names(data))) {
   analysis_data <- data[!is.na(data$OS) & !is.na(data$Grade), ]
+  analysis_data <- droplevels(analysis_data)
   if (nrow(analysis_data) > 0) {
     anova_result <- aov(OS ~ Grade, data = analysis_data)
     print(summary(anova_result))
@@ -41,6 +43,7 @@ cat("Analyzing survival time by grade and gender...\n\n")
 
 if (all(c("OS", "Grade", "Gender") %in% names(data))) {
   analysis_data <- data[!is.na(data$OS) & !is.na(data$Grade) & !is.na(data$Gender), ]
+  analysis_data <- droplevels(analysis_data)
   
   if (nrow(analysis_data) > 0) {
     tryCatch({
@@ -75,6 +78,7 @@ cat("Pairwise comparisons between groups...\n\n")
 
 if (all(c("OS", "Grade") %in% names(data))) {
   analysis_data <- data[!is.na(data$OS) & !is.na(data$Grade), ]
+  analysis_data <- droplevels(analysis_data)
   
   if (nrow(analysis_data) > 0) {
     tryCatch({

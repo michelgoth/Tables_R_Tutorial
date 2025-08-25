@@ -19,6 +19,7 @@ if (!all(required_cols %in% names(data))) {
 # Build joint groups (drop rows with missing IDH or MGMT for these analyses)
 df <- data %>%
   dplyr::filter(!is.na(IDH_mutation_status) & !is.na(MGMTp_methylation_status) & !is.na(OS) & !is.na(Censor)) %>%
+  droplevels() %>%
   dplyr::mutate(
     IDH_chr = as.character(IDH_mutation_status),
     MGMT_chr = as.character(MGMTp_methylation_status),

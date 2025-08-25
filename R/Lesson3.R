@@ -7,6 +7,8 @@ source("R/utils.R")
 load_required_packages(c("readxl", "ggplot2", "dplyr"))
 
 data <- load_clinical_data("Data/ClinicalData.xlsx")
+data_grade_prs <- filter_complete_cases(data, c("Grade", "PRS_type"))
+data_idh_gender <- filter_complete_cases(data, c("IDH_mutation_status", "Gender"))
 
 # ===============================================================
 # LESSON 3: CLINICAL FEATURE VISUALIZATION
@@ -20,8 +22,8 @@ data <- load_clinical_data("Data/ClinicalData.xlsx")
 # SECTION 1: BAR PLOTS FOR CATEGORICAL COMPARISONS -----------
 
 # Tumor Grade across PRS Type
-if (all(c("Grade", "PRS_type") %in% names(data))) {
-  p1 <- ggplot(data, aes(x = Grade, fill = PRS_type)) +
+if (all(c("Grade", "PRS_type") %in% names(data_grade_prs))) {
+  p1 <- ggplot(data_grade_prs, aes(x = Grade, fill = PRS_type)) +
     geom_bar(position = "dodge") +
     labs(title = "Tumor Grade by PRS Type",
          x = "Tumor Grade", y = "Count") +
@@ -33,8 +35,8 @@ if (all(c("Grade", "PRS_type") %in% names(data))) {
 }
 
 # IDH Mutation Status across Gender
-if (all(c("IDH_mutation_status", "Gender") %in% names(data))) {
-  p2 <- ggplot(data, aes(x = IDH_mutation_status, fill = Gender)) +
+if (all(c("IDH_mutation_status", "Gender") %in% names(data_idh_gender))) {
+  p2 <- ggplot(data_idh_gender, aes(x = IDH_mutation_status, fill = Gender)) +
     geom_bar(position = "dodge") +
     labs(title = "IDH Status by Gender",
          x = "IDH Mutation Status", y = "Count") +

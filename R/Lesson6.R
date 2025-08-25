@@ -8,6 +8,7 @@ source("R/utils.R")
 load_required_packages(c("survival", "readxl", "dplyr", "ggplot2"))
 
 data <- load_clinical_data("Data/ClinicalData.xlsx")
+data_surv_all <- filter_complete_cases(data, c("OS", "Censor"))
 
 # ===============================================================
 # LESSON 6: MULTIVARIABLE SURVIVAL ANALYSIS WITH COX MODEL
@@ -49,7 +50,7 @@ tryCatch({
 })
 
 # Quick Kaplan-Meier plot (overall) for output
-surv_obj <- Surv(data$OS, data$Censor)
+surv_obj <- Surv(data_surv_all$OS, data_surv_all$Censor)
 km_fit <- survfit(surv_obj ~ 1)
 km_df <- data.frame(time = km_fit$time, surv = km_fit$surv)
 

@@ -7,6 +7,12 @@ source("R/utils.R")
 load_required_packages(c("readxl", "ggplot2", "dplyr"))
 
 data <- load_clinical_data("Data/ClinicalData.xlsx")
+data_age_idh <- filter_complete_cases(data, c("Age", "IDH_mutation_status"))
+data_age_idh <- droplevels(data_age_idh)
+data_os_mgmt <- filter_complete_cases(data, c("OS", "MGMTp_methylation_status"))
+data_os_mgmt <- droplevels(data_os_mgmt)
+data_age_grade <- filter_complete_cases(data, c("Age", "Grade"))
+data_age_grade <- droplevels(data_age_grade)
 
 # ===============================================================
 # LESSON 8: COMPARING NUMERIC VARIABLES ACROSS GROUPS
@@ -19,35 +25,35 @@ data <- load_clinical_data("Data/ClinicalData.xlsx")
 
 # SECTION 1: WILCOXON RANK-SUM TEST ---------------------------
 
-if (all(c("Age", "IDH_mutation_status") %in% names(data))) {
-  idh_levels <- levels(data$IDH_mutation_status)
+if (all(c("Age", "IDH_mutation_status") %in% names(data_age_idh))) {
+  idh_levels <- levels(data_age_idh$IDH_mutation_status)
   idh_levels <- idh_levels[!is.na(idh_levels)]
   if (length(idh_levels) == 2) {
-    print(wilcox.test(Age ~ IDH_mutation_status, data = data))
+    print(wilcox.test(Age ~ IDH_mutation_status, data = data_age_idh))
   }
 }
 
 # Compare OS between MGMT methylation groups (if binary)
-if (all(c("OS", "MGMTp_methylation_status") %in% names(data))) {
-  mgmt_levels <- levels(data$MGMTp_methylation_status)
+if (all(c("OS", "MGMTp_methylation_status") %in% names(data_os_mgmt))) {
+  mgmt_levels <- levels(data_os_mgmt$MGMTp_methylation_status)
   mgmt_levels <- mgmt_levels[!is.na(mgmt_levels)]
   if (length(mgmt_levels) == 2) {
-    print(wilcox.test(OS ~ MGMTp_methylation_status, data = data))
+    print(wilcox.test(OS ~ MGMTp_methylation_status, data = data_os_mgmt))
   }
 }
 
 # SECTION 2: VISUALIZATION ------------------------------------
 
 # Boxplot of OS by MGMT methylation status (or fallback Age by Grade)
-if (all(c("OS", "MGMTp_methylation_status") %in% names(data))) {
-  p <- ggplot(data, aes(x = MGMTp_methylation_status, y = OS, fill = MGMTp_methylation_status)) +
+if (all(c("OS", "MGMTp_methylation_status") %in% names(data_os_mgmt))) {
+  p <- ggplot(data_os_mgmt, aes(x = MGMTp_methylation_status, y = OS, fill = MGMTp_methylation_status)) +
     geom_boxplot() +
     theme_minimal() +
     labs(title = "OS by MGMT Methylation Status", x = "MGMT Status", y = "Overall Survival (days)")
   print(p)
   save_plot_both(p, base_filename = "Lesson8_OS_by_MGMT")
-} else if (all(c("Age", "Grade") %in% names(data))) {
-  p <- ggplot(data, aes(x = Grade, y = Age, fill = Grade)) +
+} else if (all(c("Age", "Grade") %in% names(data_age_grade))) {
+  p <- ggplot(data_age_grade, aes(x = Grade, y = Age, fill = Grade)) +
     geom_boxplot() +
     theme_minimal() +
     labs(title = "Age by Tumor Grade", x = "Grade", y = "Age (years)")

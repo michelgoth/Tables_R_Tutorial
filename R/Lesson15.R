@@ -21,7 +21,8 @@ df <- data %>%
   dplyr::mutate(
     Chemo_factor = factor(Chemo_status, levels = c(0, 1), labels = c("No TMZ", "TMZ"))
   ) %>%
-  dplyr::filter(!is.na(OS) & !is.na(Censor) & !is.na(Chemo_factor) & !is.na(MGMTp_methylation_status))
+  dplyr::filter(!is.na(OS) & !is.na(Censor) & !is.na(Chemo_factor) & !is.na(MGMTp_methylation_status)) %>%
+  droplevels()
 
 cat("Counts by MGMT and TMZ:\n")
 print(with(df, table(MGMTp_methylation_status, Chemo_factor)))
