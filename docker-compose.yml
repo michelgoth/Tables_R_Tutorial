@@ -1,0 +1,7 @@
+version: '3.8'
+services:
+  analysis:
+    build: .
+    volumes:
+      - ./plots:/usr/src/app/plots
+      - ./Data:/usr/src/app/Data
