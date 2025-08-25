@@ -63,9 +63,8 @@ core_packages <- c(
 stats_packages <- c(
   "survival",    # Survival analysis
   # "survminer",   # Survival visualization (optional)
-  "rstatix",     # Statistical testing
-  "car",         # Regression diagnostics
-  "psych",       # Descriptive statistics,
+  "rstatix",     # Statistical testing (used in early lessons)
+  "car",         # Levene's test in ANOVA assumptions
   "MASS", "broom"
 )
 
@@ -79,16 +78,12 @@ viz_packages <- c(
 
 # ML and advanced modeling packages
 ml_packages <- c(
-  "randomForest", "e1071", "caret", "pROC", "rpart", "rpart.plot",
-  "nlme", "lme4", "lmerTest", "emmeans", "multcomp"
+  "randomForest", "e1071", "caret", "pROC", "rpart", "rpart.plot"
 )
 
 # Combine all packages
 all_packages <- c(core_packages, stats_packages, viz_packages, ml_packages)
-all_packages <- unique(c(all_packages, c(
-  # lesson-specific but commonly used
-  "cmprsk", "mstate"
-)))
+all_packages <- unique(c(all_packages))
 
 # SECTION 3: INSTALL PACKAGES ------------------------------------
 cat("Installing packages...\n")

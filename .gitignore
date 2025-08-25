@@ -8,3 +8,6 @@
 .env
 .vscode/
 .idea/
+
+# Ignore R session artifacts
+Rplots.pdf

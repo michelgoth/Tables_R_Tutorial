@@ -8,6 +8,12 @@ load_required_packages <- function(packages) {
     if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
       stop(paste0("Package not available: ", pkg, ". Run source('R/setup.R') first."))
     }
+    if (pkg == "ggplot2") {
+      # Set a consistent clinical theme when ggplot2 is available
+      if (exists("clinical_theme", mode = "function")) {
+        ggplot2::theme_set(clinical_theme())
+      }
+    }
   }
 }
 
@@ -94,6 +100,27 @@ filter_complete_cases <- function(df, cols) {
   if (length(use_cols) == 0) return(df)
   cc <- stats::complete.cases(df[, use_cols, drop = FALSE])
   df[cc, , drop = FALSE]
+}
+
+
+# clinical_theme: consistent plotting theme for all figures
+clinical_theme <- function(base_size = 12) {
+  ggplot2::theme_minimal(base_size = base_size) +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(face = "bold", hjust = 0, margin = ggplot2::margin(b = 6)),
+      axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 6)),
+      axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 6)),
+      legend.position = "right",
+      panel.grid.minor = ggplot2::element_blank()
+    )
+}
+
+# print_session_info: helper to log session details at lesson end
+print_session_info <- function() {
+  try({
+    cat("\n--- Session Info ---\n")
+    print(sessionInfo())
+  }, silent = TRUE)
 }
 
 
