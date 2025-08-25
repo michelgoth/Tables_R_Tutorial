@@ -23,9 +23,9 @@ This document describes the clinical dataset used across all lessons. Variables 
   - `Radio_status` (numeric: 0 untreated, 1 treated)
   - `Chemo_status` (numeric: 0 untreated, 1 treated; TMZ)
 - Molecular
-  - `IDH_mutation_status` (factor: Mutant, Wildtype)
-  - `1p19q_codeletion_status` (factor: Codel, Non-codel)
-  - `MGMTp_methylation_status` (factor: methylated, un-methylated)
+  - `IDH_mutation_status` (factor: Mutant, Wildtype): A key prognostic and diagnostic marker in gliomas.
+  - `1p19q_codeletion_status` (factor: Codel, Non-codel): A defining marker for oligodendroglioma with prognostic significance.
+  - `MGMTp_methylation_status` (factor: methylated, un-methylated): A predictive marker for response to temozolomide (TMZ) chemotherapy.
 - Survival
   - `OS` (numeric, days)
   - `Censor` (numeric: 0 alive, 1 dead)

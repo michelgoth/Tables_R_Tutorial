@@ -7,6 +7,12 @@
 
 ---
 
+## Target Audience
+
+This curriculum is designed specifically for those who are new to bioinformatics and R programming. The goal is to provide a practical, clinically-relevant introduction to data analysis without assuming a background in coding.
+
+---
+
 ## Overview
 
 This repository provides a structured, hands-on curriculum for clinical data analysis in R. It uses the provided clinical dataset exclusively and focuses on reproducible scripts, clear explanations, and automatically generated plots saved to `plots/`.
@@ -50,6 +56,7 @@ This repository provides a structured, hands-on curriculum for clinical data ana
    ```r
    source("R/Lesson1.R")
    ```
+   We recommend reading the corresponding lesson explanation in [`docs/Lesson01.md`](docs/Lesson01.md) as you run the script.
 
 ---
 
