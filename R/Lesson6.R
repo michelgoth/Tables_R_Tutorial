@@ -1,58 +1,13 @@
 # Set default CRAN mirror for non-interactive mode
-if (!interactive() && is.null(getOption("repos")[["CRAN"]])) {
+if (!interactive() && is.null(getOption("repos")["CRAN"])) {
   options(repos = c(CRAN = "https://cran.rstudio.com/"))
 }
 
-# List of required packages
-required_packages <- c("readxl", "ggplot2", "dplyr", "tidyr", 
-                       "corrplot", "car", "psych", "ggpubr", "rstatix", "survival")
+# Load packages and data via utilities
+source("R/utils.R")
+load_required_packages(c("survival", "readxl", "dplyr", "ggplot2"))
 
-# Install missing packages
-installed <- rownames(installed.packages())
-for (pkg in required_packages) {
-  if (!(pkg %in% installed)) {
-    tryCatch({
-      install.packages(pkg, dependencies = TRUE)
-    }, error = function(e) {
-      cat(sprintf("Failed to install %s: %s\n", pkg, e$message))
-    })
-  }
-}
-
-# Load libraries
-for (pkg in required_packages) {
-  if (!require(pkg, character.only = TRUE)) {
-    cat(sprintf("Failed to load package: %s\n", pkg))
-  }
-}
-
-# Data file path
-DATA_PATH <- "Data/ClinicalData.xlsx"
-if (!file.exists(DATA_PATH)) {
-  stop(paste0("ERROR: Data file not found at ", DATA_PATH, ". Please ensure the file exists."))
-}
-
-# Load the data
-suppressWarnings({
-  data <- tryCatch({
-    readxl::read_excel(DATA_PATH)
-  }, error = function(e) {
-    stop(paste0("ERROR: Could not read data file: ", e$message))
-  })
-})
-
-# Convert key columns to appropriate types (if present)
-if ("Grade" %in% names(data)) data$Grade <- as.factor(data$Grade)
-if ("Gender" %in% names(data)) data$Gender <- as.factor(data$Gender)
-if ("PRS_type" %in% names(data)) data$PRS_type <- as.factor(data$PRS_type)
-if ("IDH_mutation_status" %in% names(data)) data$IDH_mutation_status <- as.factor(data$IDH_mutation_status)
-if ("MGMTp_methylation_status" %in% names(data)) data$MGMTp_methylation_status <- as.factor(data$MGMTp_methylation_status)
-if ("Histology" %in% names(data)) data$Histology <- as.factor(data$Histology)
-if ("OS" %in% names(data)) data$OS <- as.numeric(data$OS)
-if ("Censor (alive=0; dead=1)" %in% names(data)) data$`Censor (alive=0; dead=1)` <- as.numeric(data$`Censor (alive=0; dead=1)`)
-if ("Age" %in% names(data)) data$Age <- as.numeric(data$Age)
-if ("Chemo_status (TMZ treated=1;un-treated=0)" %in% names(data)) data$`Chemo_status (TMZ treated=1;un-treated=0)` <- as.numeric(data$`Chemo_status (TMZ treated=1;un-treated=0)`)
-if ("Radio_status (treated=1;un-treated=0)" %in% names(data)) data$`Radio_status (treated=1;un-treated=0)` <- as.numeric(data$`Radio_status (treated=1;un-treated=0)`)
+data <- load_clinical_data("Data/ClinicalData.xlsx")
 
 # ===============================================================
 # LESSON 6: MULTIVARIABLE SURVIVAL ANALYSIS WITH COX MODEL
@@ -70,10 +25,10 @@ if ("Radio_status (treated=1;un-treated=0)" %in% names(data)) data$`Radio_status
 
 # SECTION 1: BUILD COX MODEL ----------------------------------
 
-# Check if required columns exist
-required_cols <- c("OS", "Censor (alive=0; dead=1)", "Age", "Gender", "Grade", 
+# Check if required columns exist (standardized names)
+required_cols <- c("OS", "Censor", "Age", "Gender", "Grade", 
                    "IDH_mutation_status", "MGMTp_methylation_status", "PRS_type", 
-                   "Chemo_status (TMZ treated=1;un-treated=0)", "Radio_status (treated=1;un-treated=0)")
+                   "Chemo_status", "Radio_status")
 
 missing_cols <- required_cols[!required_cols %in% names(data)]
 if (length(missing_cols) > 0) {
@@ -81,25 +36,30 @@ if (length(missing_cols) > 0) {
   cat("Proceeding with available columns...\n")
 }
 
-# Fit a multivariate Cox model using clinical predictors
+# Fit a multivariate Cox model using clinical predictors (OS in days)
 tryCatch({
-  cox_model <- coxph(Surv(OS, `Censor (alive=0; dead=1)`) ~ Age + Gender + Grade + 
+  cox_model <- coxph(Surv(OS, Censor) ~ Age + Gender + Grade + 
                        IDH_mutation_status + MGMTp_methylation_status +
-                       PRS_type + `Chemo_status (TMZ treated=1;un-treated=0)` + `Radio_status (treated=1;un-treated=0)`, 
+                       PRS_type + Chemo_status + Radio_status, 
                      data = data)
-  
-  # View model summary
   print(summary(cox_model))
 }, error = function(e) {
   cat("Error fitting Cox model:", e$message, "\n")
   cat("This may be due to missing data or insufficient sample size.\n")
 })
 
-# Key Output Components:
-# - coef: log hazard ratios
-# - exp(coef): hazard ratio (HR)
-# - p-value: significance of predictor
-# - Concordance: model predictive ability
+# Quick Kaplan-Meier plot (overall) for output
+surv_obj <- Surv(data$OS, data$Censor)
+km_fit <- survfit(surv_obj ~ 1)
+km_df <- data.frame(time = km_fit$time, surv = km_fit$surv)
+
+p_km <- ggplot(km_df, aes(x = to_months(time), y = surv)) +
+  geom_step(color = "steelblue") +
+  labs(title = "Kaplan-Meier Overall Survival",
+       x = "Time (months)", y = "Survival Probability") +
+  theme_minimal()
+print(p_km)
+save_plot_both(p_km, base_filename = "Lesson6_KM_Overall")
 
 # TIP:
 # HR > 1 → Higher risk; HR < 1 → Lower risk
@@ -107,15 +67,7 @@ tryCatch({
 # PRACTICE TASKS ----------------------------------------------
 
 # 1. Which variables are statistically significant? (p < 0.05)
-
-# 2. Interpret the hazard ratio for Age:
-#    - Is older age associated with increased or decreased hazard?
-
-# 3. Interpret the hazard ratio for IDH mutation:
-#    - Does having a mutation reduce the risk of death?
-
-# 4. Remove a variable (e.g., PRS_type) and re-run the model:
-#    - How do other coefficients change?
-
-# 5. OPTIONAL: Use `ggforest(cox_model, data = data)` from survminer
-#    to visualize the hazard ratios as a forest plot.
+# 2. Interpret the hazard ratio for Age: is older age associated with increased hazard?
+# 3. Interpret the hazard ratio for IDH mutation: does mutation reduce risk?
+# 4. Remove a variable (e.g., PRS_type) and re-run the model: how do coefficients change?
+# 5. OPTIONAL: Use ggforest(cox_model, data = data) from survminer to visualize HRs.

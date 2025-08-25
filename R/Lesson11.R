@@ -1,70 +1,16 @@
 # Set default CRAN mirror for non-interactive mode
-if (!interactive() && is.null(getOption("repos")[["CRAN"]])) {
+if (!interactive() && is.null(getOption("repos")["CRAN"])) {
   options(repos = c(CRAN = "https://cran.rstudio.com/"))
 }
 
-# List of required packages
-required_packages <- c("readxl", "ggplot2", "dplyr", "tidyr", 
-                       "corrplot", "car", "psych", "ggpubr", "rstatix", "MASS", "broom")
+source("R/utils.R")
+load_required_packages(c("readxl", "ggplot2"))
 
-# Install missing packages
-installed <- rownames(installed.packages())
-for (pkg in required_packages) {
-  if (!(pkg %in% installed)) {
-    tryCatch({
-      install.packages(pkg, dependencies = TRUE)
-    }, error = function(e) {
-      cat(sprintf("Failed to install %s: %s\n", pkg, e$message))
-    })
-  }
-}
-
-# Load libraries
-for (pkg in required_packages) {
-  if (!require(pkg, character.only = TRUE)) {
-    cat(sprintf("Failed to load package: %s\n", pkg))
-  }
-}
-
-# Data file path
-DATA_PATH <- "Data/ClinicalData.xlsx"
-if (!file.exists(DATA_PATH)) {
-  stop(paste0("ERROR: Data file not found at ", DATA_PATH, ". Please ensure the file exists."))
-}
-
-# Load the data
-suppressWarnings({
-  data <- tryCatch({
-    readxl::read_excel(DATA_PATH)
-  }, error = function(e) {
-    stop(paste0("ERROR: Could not read data file: ", e$message))
-  })
-})
-
-# Convert key columns to appropriate types (if present)
-if ("Grade" %in% names(data)) data$Grade <- as.factor(data$Grade)
-if ("Gender" %in% names(data)) data$Gender <- as.factor(data$Gender)
-if ("PRS_type" %in% names(data)) data$PRS_type <- as.factor(data$PRS_type)
-if ("IDH_mutation_status" %in% names(data)) data$IDH_mutation_status <- as.factor(data$IDH_mutation_status)
-if ("MGMTp_methylation_status" %in% names(data)) data$MGMTp_methylation_status <- as.factor(data$MGMTp_methylation_status)
-if ("Histology" %in% names(data)) data$Histology <- as.factor(data$Histology)
-if ("Age" %in% names(data)) data$Age <- as.numeric(data$Age)
-if ("OS" %in% names(data)) data$OS <- as.numeric(data$OS)
+data <- load_clinical_data("Data/ClinicalData.xlsx")
 
 # ===============================================================
 # LESSON 11: MULTIVARIATE ANALYSIS (ANOVA, MANOVA)
 # ===============================================================
-
-# LEARNING OBJECTIVES:
-# - Perform one-way and two-way ANOVA
-# - Conduct MANOVA for multiple dependent variables
-# - Apply post-hoc tests and effect size calculations
-# - Interpret results in clinical context
-
-# WHAT YOU'LL LEARN:
-# Multivariate analysis allows us to compare means across multiple groups
-# while controlling for multiple variables. Essential for clinical trials
-# and comparative effectiveness research.
 
 cat("=== LESSON 11: MULTIVARIATE ANALYSIS ===\n")
 cat("Sample size:", nrow(data), "patients\n")
@@ -72,35 +18,20 @@ cat("Available variables:", paste(names(data), collapse = ", "), "\n\n")
 
 # SECTION 1: ONE-WAY ANOVA -------------------------------------
 
-cat("SECTION 1: ONE-WAY ANOVA\n")
-cat("Comparing survival time across tumor grades...\n\n")
-
 if (all(c("OS", "Grade") %in% names(data))) {
-  # Remove NA values for analysis
   analysis_data <- data[!is.na(data$OS) & !is.na(data$Grade), ]
-  
   if (nrow(analysis_data) > 0) {
-    # Perform one-way ANOVA
-    tryCatch({
-      anova_result <- aov(OS ~ Grade, data = analysis_data)
-      print(summary(anova_result))
-      
-      # Calculate effect size (eta-squared)
-      ss_total <- sum((analysis_data$OS - mean(analysis_data$OS, na.rm = TRUE))^2, na.rm = TRUE)
-      ss_between <- sum(anova_result$effects[2:length(anova_result$effects)]^2)
-      eta_squared <- ss_between / ss_total
-      
-      cat("\nEffect Size (Eta-squared):", round(eta_squared, 3), "\n")
-      cat("Interpretation: Eta-squared > 0.14 = large effect\n\n")
-      
-    }, error = function(e) {
-      cat("Error in ANOVA:", e$message, "\n")
-    })
-  } else {
-    cat("Insufficient data for ANOVA analysis.\n")
+    anova_result <- aov(OS ~ Grade, data = analysis_data)
+    print(summary(anova_result))
+    
+    # Save OS by Grade boxplot
+    p <- ggplot(analysis_data, aes(x = Grade, y = OS, fill = Grade)) +
+      geom_boxplot() +
+      theme_minimal() +
+      labs(title = "OS by Tumor Grade", x = "Grade", y = "Overall Survival (days)")
+    print(p)
+    save_plot_both(p, base_filename = "Lesson11_OS_by_Grade")
   }
-} else {
-  cat("Required columns 'OS' and/or 'Grade' not found.\n")
 }
 
 # SECTION 2: TWO-WAY ANOVA ------------------------------------

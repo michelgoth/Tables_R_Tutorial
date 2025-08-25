@@ -1,5 +1,6 @@
-# Clinical Data Analysis Learning Dashboard
-# Interactive Shiny Application
+# NOTE: This Shiny app is optional and archived from the learning flow.
+# The primary focus of this repository is the code-first lessons in R/.
+# You can still run this app by moving it back to the root or sourcing it from extras/.
 
 # Load required libraries
 library(shiny)

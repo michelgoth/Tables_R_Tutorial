@@ -14,70 +14,51 @@
 # You'll install essential packages, load your dataset, and 
 # create your first clinical plots using R.
 
-# SECTION 1: INSTALL & LOAD PACKAGES --------------------------
+# SECTION 1: LOAD PACKAGES & DATA -----------------------------
 
-# Set default CRAN mirror for non-interactive mode
-if (!interactive() && is.null(getOption("repos")[["CRAN"]])) {
-  options(repos = c(CRAN = "https://cran.rstudio.com/"))
-}
+# Assumes you have run: source('R/setup.R')
+source("R/utils.R")
+load_required_packages(c("ggplot2", "dplyr", "tidyr", "ggpubr", "rstatix", "readxl"))
 
-# List of packages needed
-required_packages <- c("readxl", "ggplot2", "dplyr", "tidyr", 
-                       "corrplot", "car", "psych", "ggpubr", "rstatix")
+# Load the standardized dataset
+data <- load_clinical_data("Data/ClinicalData.xlsx")
 
-# Install missing packages
-installed <- rownames(installed.packages())
-for (pkg in required_packages) {
-  if (!(pkg %in% installed)) install.packages(pkg, dependencies = TRUE)
-}
-
-# Load libraries
-lapply(required_packages, library, character.only = TRUE)
-
-# SECTION 2: IMPORT DATA --------------------------------------
-
-# Set your working directory or provide full path
-# Make sure Data_Table.xlsx is saved in this directory
-# setwd("path_to_your_directory")
-
-# Load the data
-data <- read_excel("Data/ClinicalData.xlsx")
-
-# SECTION 3: DATA STRUCTURE CHECK -----------------------------
+# SECTION 2: DATA STRUCTURE CHECK -----------------------------
 
 # View structure and summary of the dataset
 str(data)
 summary(data)
 head(data)
 
-# Convert key categorical variables
-data$Grade <- factor(data$Grade)
-data$Gender <- factor(data$Gender)
-data$PRS_type <- factor(data$PRS_type)
-
 # SECTION 4: BASIC VISUALIZATION ------------------------------
 
 # Histogram of Age
-ggplot(data, aes(x = Age)) +
+p1 <- ggplot(data, aes(x = Age)) +
   geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
   labs(title = "Age Distribution", x = "Age", y = "Count") +
   theme_minimal()
+print(p1)
+save_plot_both(p1, base_filename = "Lesson1_Age_Distribution")
 
 # Bar plot of Tumor Grade by Gender
-ggplot(data, aes(x = Grade, fill = Gender)) +
+p2 <- ggplot(data, aes(x = Grade, fill = Gender)) +
   geom_bar(position = "dodge") +
   labs(title = "Tumor Grade by Gender", x = "Grade", y = "Count") +
   theme_minimal()
+print(p2)
+save_plot_both(p2, base_filename = "Lesson1_Grade_by_Gender")
 
 # SECTION 5: CUSTOMIZING PLOTS --------------------------------
 
 # Customize with color, labels, and themes
-ggplot(data, aes(x = PRS_type, fill = Grade)) +
+p3 <- ggplot(data, aes(x = PRS_type, fill = Grade)) +
   geom_bar(position = "fill") +
   labs(title = "Proportion of Grades within PRS Types", 
        y = "Proportion", x = "PRS Type") +
   scale_fill_brewer(palette = "Set2") +
   theme_minimal()
+print(p3)
+save_plot_both(p3, base_filename = "Lesson1_Grades_within_PRS")
 
 # PRACTICE TASKS ----------------------------------------------
 

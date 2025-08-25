@@ -1,77 +1,47 @@
 # Set default CRAN mirror for non-interactive mode
-if (!interactive() && is.null(getOption("repos")[["CRAN"]])) {
+if (!interactive() && is.null(getOption("repos")["CRAN"])) {
   options(repos = c(CRAN = "https://cran.rstudio.com/"))
 }
 
-# List of required packages
-required_packages <- c("readxl", "ggplot2", "dplyr", "tidyr", 
-                       "corrplot", "car", "psych", "ggpubr", "rstatix", 
-                       "randomForest", "e1071", "caret", "pROC", "rpart", "rpart.plot")
+source("R/utils.R")
+load_required_packages(c("readxl", "ggplot2", "randomForest"))
 
-# Install missing packages
-installed <- rownames(installed.packages())
-for (pkg in required_packages) {
-  if (!(pkg %in% installed)) {
-    tryCatch({
-      install.packages(pkg, dependencies = TRUE)
-    }, error = function(e) {
-      cat(sprintf("Failed to install %s: %s\n", pkg, e$message))
-    })
-  }
-}
-
-# Load libraries
-for (pkg in required_packages) {
-  if (!require(pkg, character.only = TRUE)) {
-    cat(sprintf("Failed to load package: %s\n", pkg))
-  }
-}
-
-# Data file path
-DATA_PATH <- "Data/ClinicalData.xlsx"
-if (!file.exists(DATA_PATH)) {
-  stop(paste0("ERROR: Data file not found at ", DATA_PATH, ". Please ensure the file exists."))
-}
-
-# Load the data
-suppressWarnings({
-  data <- tryCatch({
-    readxl::read_excel(DATA_PATH)
-  }, error = function(e) {
-    stop(paste0("ERROR: Could not read data file: ", e$message))
-  })
-})
-
-# Convert key columns to appropriate types (if present)
-if ("Grade" %in% names(data)) data$Grade <- as.factor(data$Grade)
-if ("Gender" %in% names(data)) data$Gender <- as.factor(data$Gender)
-if ("PRS_type" %in% names(data)) data$PRS_type <- as.factor(data$PRS_type)
-if ("IDH_mutation_status" %in% names(data)) data$IDH_mutation_status <- as.factor(data$IDH_mutation_status)
-if ("MGMTp_methylation_status" %in% names(data)) data$MGMTp_methylation_status <- as.factor(data$MGMTp_methylation_status)
-if ("Histology" %in% names(data)) data$Histology <- as.factor(data$Histology)
-if ("Age" %in% names(data)) data$Age <- as.numeric(data$Age)
-if ("OS" %in% names(data)) data$OS <- as.numeric(data$OS)
-if ("Censor (alive=0; dead=1)" %in% names(data)) data$`Censor (alive=0; dead=1)` <- as.numeric(data$`Censor (alive=0; dead=1)`)
+data <- load_clinical_data("Data/ClinicalData.xlsx")
 
 # ===============================================================
 # LESSON 13: MACHINE LEARNING BASICS FOR CLINICAL PREDICTION
 # ===============================================================
 
-# LEARNING OBJECTIVES:
-# - Build Random Forest models for clinical prediction
-# - Implement Support Vector Machines (SVM)
-# - Perform cross-validation and model evaluation
-# - Interpret feature importance and model performance
-# - Apply machine learning to clinical decision-making
-
-# WHAT YOU'LL LEARN:
-# Machine learning provides powerful tools for clinical prediction,
-# risk stratification, and personalized medicine. This lesson covers
-# essential algorithms and evaluation methods.
-
 cat("=== LESSON 13: MACHINE LEARNING BASICS ===\n")
 cat("Sample size:", nrow(data), "patients\n")
 cat("Available variables:", paste(names(data), collapse = ", "), "\n\n")
+
+# Minimal reproducible RF example with importance plot
+if (all(c("OS", "Censor") %in% names(data))) {
+  ml_data <- data
+  # Create a simple binary outcome: survived 1 year (approx using days)
+  ml_data$survival_1year <- factor(ifelse(ml_data$OS >= 365 & ml_data$Censor == 0, 1,
+                                   ifelse(ml_data$OS < 365 & ml_data$Censor == 1, 0, NA)))
+  feature_cols <- c("Age", "Gender", "Grade", "IDH_mutation_status")
+  available_features <- feature_cols[feature_cols %in% names(ml_data)]
+  rf_data <- ml_data[, c(available_features, "survival_1year")]
+  rf_data <- rf_data[complete.cases(rf_data), ]
+  if (nrow(rf_data) > 20 && length(available_features) > 0) {
+    set.seed(123)
+    rf_formula <- as.formula(paste("survival_1year ~", paste(available_features, collapse = " + ")))
+    rf_model <- randomForest(rf_formula, data = rf_data, ntree = 300, importance = TRUE)
+    imp <- importance(rf_model)
+    imp_df <- data.frame(Feature = rownames(imp), MeanDecreaseGini = imp[, "MeanDecreaseGini"])
+    p <- ggplot(imp_df, aes(x = reorder(Feature, MeanDecreaseGini), y = MeanDecreaseGini)) +
+      geom_col(fill = "steelblue") +
+      coord_flip() +
+      theme_minimal() +
+      labs(title = "Random Forest Feature Importance",
+           x = "Feature", y = "Mean Decrease Gini")
+    print(p)
+    save_plot_both(p, base_filename = "Lesson13_RF_Feature_Importance")
+  }
+}
 
 # SECTION 1: DATA PREPARATION FOR MACHINE LEARNING ------------
 

@@ -9,10 +9,25 @@
 # Date: 2025
 # ===============================================================
 
-# Set default CRAN mirror for non-interactive mode
-if (!interactive() && is.null(getOption("repos")[["CRAN"]])) {
-  options(repos = c(CRAN = "https://cran.rstudio.com/"))
+# Set default CRAN mirror for non-interactive mode and unset repos
+repos_current <- getOption("repos")
+if (is.null(repos_current) || is.na(repos_current["CRAN"]) || repos_current["CRAN"] %in% c("", "@CRAN@")) {
+  options(repos = c(CRAN = "https://cloud.r-project.org"))
 }
+if (!interactive()) {
+  options(repos = c(CRAN = "https://cloud.r-project.org"))
+}
+
+# Bootstrap Bioconductor installer if needed
+.ensure_bioc <- function() {
+  if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+  }
+  TRUE
+}
+
+# Declare Bioconductor package list (empty by default)
+bioc_packages <- character(0)
 
 cat("Setting up Clinical Data Analysis Environment...\n\n")
 
@@ -47,10 +62,11 @@ core_packages <- c(
 # Statistical analysis packages
 stats_packages <- c(
   "survival",    # Survival analysis
-  "survminer",   # Survival visualization
+  # "survminer",   # Survival visualization (optional)
   "rstatix",     # Statistical testing
   "car",         # Regression diagnostics
-  "psych"        # Descriptive statistics
+  "psych",       # Descriptive statistics,
+  "MASS", "broom"
 )
 
 # Visualization packages
@@ -61,8 +77,18 @@ viz_packages <- c(
   "scales"       # Scale functions for ggplot2
 )
 
+# ML and advanced modeling packages
+ml_packages <- c(
+  "randomForest", "e1071", "caret", "pROC", "rpart", "rpart.plot",
+  "nlme", "lme4", "lmerTest", "emmeans", "multcomp"
+)
+
 # Combine all packages
-all_packages <- c(core_packages, stats_packages, viz_packages)
+all_packages <- c(core_packages, stats_packages, viz_packages, ml_packages)
+all_packages <- unique(c(all_packages, c(
+  # lesson-specific but commonly used
+  "cmprsk", "mstate"
+)))
 
 # SECTION 3: INSTALL PACKAGES ------------------------------------
 cat("Installing packages...\n")
@@ -71,11 +97,9 @@ cat("Installing packages...\n")
 install_packages_safely <- function(packages) {
   for (pkg in packages) {
     cat("Installing", pkg, "... ")
-    
-    # Check if package is already installed
     if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
       tryCatch({
-        install.packages(pkg, dependencies = TRUE, quiet = TRUE)
+        install.packages(pkg, dependencies = TRUE)
         cat("\n")
       }, error = function(e) {
         cat("Failed to install", pkg, "\n")
@@ -87,13 +111,31 @@ install_packages_safely <- function(packages) {
   }
 }
 
-# Install packages
+# Install CRAN packages
 install_packages_safely(all_packages)
+
+# Install Bioconductor packages if any are declared
+if (length(bioc_packages) > 0) {
+  .ensure_bioc()
+  for (pkg in bioc_packages) {
+    cat("Installing Bioconductor package", pkg, "... ")
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      tryCatch({
+        BiocManager::install(pkg, ask = FALSE, update = FALSE)
+        cat("\n")
+      }, error = function(e) {
+        cat("Failed to install", pkg, "from Bioconductor\n")
+        cat("Error:", e$message, "\n")
+      })
+    } else {
+      cat("(already installed)\n")
+    }
+  }
+}
 
 # SECTION 4: VERIFY INSTALLATION ---------------------------------
 cat("\n Verifying package installation...\n")
 
-# Check which packages are successfully loaded
 loaded_packages <- c()
 failed_packages <- c()
 
@@ -105,7 +147,6 @@ for (pkg in all_packages) {
   }
 }
 
-# Report results
 cat("Successfully loaded packages:", length(loaded_packages), "/", length(all_packages), "\n")
 if (length(failed_packages) > 0) {
   cat("Failed to load packages:", paste(failed_packages, collapse = ", "), "\n")
