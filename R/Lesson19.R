@@ -11,7 +11,8 @@
 
 # SECTION 0: SETUP ---------------------------------------------
 source("R/utils.R")
-load_required_packages(c("dplyr", "ggplot2", "survival"))
+# We add `survminer` for plotting diagnostics and `ggeffects` for visualizing model terms.
+load_required_packages(c("dplyr", "ggplot2", "survival", "survminer", "ggeffects"))
 data <- load_clinical_data("Data/ClinicalData.xlsx")
 cat("--- LESSON 19: Advanced Model Diagnostics ---\n")
 
@@ -49,6 +50,16 @@ cat("\n--- SECTION 2: Proportional Hazards Assumption Test ---\n")
 # A p-value < 0.05 indicates a violation of the assumption.
 ph_test <- cox.zph(model_trained)
 print(ph_test)
+
+# --- Visualizing the PH Test ---
+# We can use the `ggcoxzph()` function from the `survminer` package to
+# visualize the results. A flat, horizontal line is what you want to
+# see. A sloped line indicates a violation of the assumption.
+cat("\n--- Generating Proportional Hazards diagnostic plot... ---\n")
+p_ph_test <- ggcoxzph(ph_test)
+print(p_ph_test[[1]]) # Print the first plot in the list (Age)
+save_plot_list_both(p_ph_test, base_filename = "Lesson19_PH_Assumption_Checks")
+cat("--- Plot 'Lesson19_PH_Assumption_Checks.pdf/.png' saved. ---\n")
 
 # --- Interpretation of the PH Test ---
 # Look at the p-value for each variable and for the 'GLOBAL' test.
@@ -92,6 +103,27 @@ model_spline <- coxph(fml_spline, data = train_data)
 # assumption was violated.
 linearity_test <- anova(model_trained, model_spline)
 print(linearity_test)
+
+# --- Visualizing the Linearity Test ---
+# We can visualize the effect of Age from the spline model to see if it's
+# linear. We use the `ggpredict()` function to get the estimated effect
+# of Age from our non-linear model.
+cat("\n--- Generating plot of non-linear effect for Age... ---\n")
+# ggpredict calculates the predicted values (risk) for the term "Age".
+age_effect <- ggpredict(model_spline, terms = "Age")
+
+p_age_linearity <- ggplot(age_effect, aes(x = x, y = predicted)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
+  theme_minimal() +
+  labs(
+    title = "Fitted Effect of Age on Log-Hazard (from Spline Model)",
+    x = "Age",
+    y = "Predicted Log-Hazard (Risk)"
+  )
+print(p_age_linearity)
+save_plot_both(p_age_linearity, base_filename = "Lesson19_Age_Linearity_Check")
+cat("--- Plot 'Lesson19_Age_Linearity_Check.pdf/.png' saved. ---\n")
 
 # --- Interpretation of the Linearity Test ---
 # If the p-value is small (< 0.05), it tells us that modeling Age with

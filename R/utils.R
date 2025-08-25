@@ -89,6 +89,47 @@ save_plot_both <- function(plot_obj, base_filename, path = "plots", width = 8, h
   ggplot2::ggsave(file.path(path, paste0(base_filename, ".pdf")), plot = plot_obj, width = width, height = height)
 }
 
+#' Save a list of ggplot objects to both PDF and PNG formats.
+#'
+#' This function iterates over a list of ggplot objects and saves each one
+#' as both a PDF and a PNG file in the 'plots' directory.
+#'
+#' @param plot_list A list of ggplot objects.
+#' @param base_filename The base name for the output files.
+#' @return Invisible NULL.
+save_plot_list_both <- function(plot_list, base_filename) {
+  # Ensure the 'plots' directory exists.
+  ensure_plots_dir()
+  # Loop through the list of plots
+  for (i in seq_along(plot_list)) {
+    # Create a unique filename for each plot
+    filename_with_index <- paste0(base_filename, "_", i)
+    pdf_path <- file.path("plots", paste0(filename_with_index, ".pdf"))
+    png_path <- file.path("plots", paste0(filename_with_index, ".png"))
+
+    # Save to PDF
+    ggplot2::ggsave(
+      pdf_path,
+      plot = plot_list[[i]],
+      width = 8,
+      height = 6,
+      units = "in",
+      device = "pdf"
+    )
+
+    # Save to PNG
+    ggplot2::ggsave(
+      png_path,
+      plot = plot_list[[i]],
+      width = 1200,
+      height = 900,
+      units = "px",
+      dpi = 150,
+      bg = "white"
+    )
+  }
+}
+
 #' @title Filter for Complete Cases
 #' @description Safely removes rows from a data frame that have missing values
 #'   in a specified set of columns.

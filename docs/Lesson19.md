@@ -12,6 +12,9 @@ The Cox model is technically the Cox **Proportional Hazards** model. This name h
 -   **What it Means:** It assumes that the effect (the Hazard Ratio) of a given variable is **constant over time**. For example, it assumes that the increased risk associated with having a Grade IV tumor (compared to Grade II) is the same at 1 month post-diagnosis as it is at 5 years post-diagnosis.
 -   **Why it Matters:** If the assumption is violated, the model's conclusions can be wrong. For instance, a variable might be a major risk factor early on but have no effect later. A standard Cox model would miss this and average the effect over time, giving a misleading result.
 -   **How We Test It:** We use the `cox.zph()` function. This function performs a test for each variable and a `GLOBAL` test for the model as a whole. The null hypothesis is that the assumption is met. Therefore, a **p-value > 0.05 is good**, indicating the assumption holds. A p-value < 0.05 is bad, indicating a violation.
+-   **How We Visualize It:** The script now also generates the plot `Lesson19_PH_Assumption_Checks.pdf`. This plot shows the scaled residuals over time for each variable.
+    -   **Good:** A randomly scattered pattern of points forming a roughly horizontal line.
+    -   **Bad:** A clear slope or pattern in the points, which visually confirms that the variable's effect is changing over time.
 
 ## Assumption 2: Linearity of Continuous Variables
 
@@ -22,6 +25,9 @@ When we include a variable like `Age` in our model, we are making an assumption 
 -   **How We Test It:** We build a second, more flexible model that allows for a non-linear (curved) relationship for `Age` using a technique called **splines**. We then statistically compare this flexible model to our original linear model using an ANOVA test.
     -   A **p-value > 0.05** means the simple, linear model is sufficient.
     -   A **p-value < 0.05** tells us that the more complex, curved model is significantly better, meaning the linearity assumption was violated.
+-   **How We Visualize It:** To make this clear, the script generates the plot `Lesson19_Age_Linearity_Check.pdf`. This plot shows the effect of Age on risk that the flexible spline model estimated.
+    -   **Linear:** If the line is mostly straight, it confirms the ANOVA test result that a simple linear effect is adequate.
+    -   **Non-Linear:** If the line is clearly curved, it provides visual proof that the relationship is more complex.
 
 ## The Final Verdict
 
