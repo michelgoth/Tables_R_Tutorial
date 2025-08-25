@@ -1,9 +1,4 @@
 # Clinical Data Analysis Learning Platform
-
-**New to R or Coding? [Start Here!](NEUROSURGEON_GUIDE.md)**
-
-> Run this in RStudio: `source('R/Neurosurgeon_QuickStart.R')`
-
 [![R Version](https://img.shields.io/badge/R-4.0%2B-blue.svg)](https://www.r-project.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://www.r-project.org/)
