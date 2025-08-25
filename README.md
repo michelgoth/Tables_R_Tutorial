@@ -3,32 +3,36 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://www.r-project.org/)
 
-> **A clinical, code-first learning resource using a single provided dataset.**
+> **An integrated, code-first learning resource for clinical and transcriptomic data analysis.**
 
 ---
 
 ## Target Audience
 
-This curriculum is designed specifically for those who are new to bioinformatics and R programming. The goal is to provide a practical, clinically-relevant introduction to data analysis without assuming a background in coding.
+This curriculum is designed for those new to bioinformatics and R programming. The goal is to provide a practical, clinically-relevant introduction to data analysis, starting with clinical variables and progressing to advanced transcriptomic analysis.
 
 ---
 
 ## Overview
 
-This repository provides a structured, hands-on curriculum for clinical data analysis in R. It uses the provided clinical dataset exclusively and focuses on reproducible scripts, clear explanations, and automatically generated plots saved to `plots/`.
+This repository provides a structured, hands-on curriculum for integrated clinical and genomic data analysis in R. It uses a real-world glioma dataset to guide users from basic statistics to advanced, publication-ready bioinformatics analyses, including building a validated, integrated prognostic model.
 
 ---
 
 ## Key Features
 
-### Curriculum (Lessons 1–19)
-- Lessons 1–3: Import, descriptive statistics, categorical visualization
-- Lessons 4–6: Kaplan–Meier, log-rank test, multivariable Cox
-- Lessons 7–11: Association tests, group comparisons, logistic regression, correlation, ANOVA/MANOVA
-- Lessons 12–19: Clinician extensions, ML basics, joint molecular groups, treatment interactions, adjusted analysis, prognostic scoring, model validation, and **assumption testing**
+### Curriculum (Lessons 1–23)
+- **Part 1: Clinical Data Analysis (Lessons 1–19)**
+    - Lessons 1–11: Foundational statistics (EDA, survival, regression, group comparisons).
+    - Lessons 12–19: Advanced clinical modeling (risk scores, interactions, validation, diagnostics).
+- **Part 2: Transcriptomic Data Analysis (Lessons 20–23)**
+    - Lesson 20: Exploratory analysis with Principal Component Analysis (PCA).
+    - Lesson 21: Discovery of novel prognostic genes (DE and Survival Analysis).
+    - Lesson 22: Building an integrated clinical-genomic model with Machine Learning (LASSO).
+    - Lesson 23: Uncovering biological pathways with Gene Set Enrichment Analysis (GSEA).
 
 ### Visualization
-- Publication-ready plots saved to `plots/` (PDF and PNG)
+- Publication-ready plots saved to `plots/` for all analyses.
 - Consistent utilities via `R/utils.R`
 
 ---
@@ -79,7 +83,11 @@ This repository provides a structured, hands-on curriculum for clinical data ana
 - Lesson 16: Radiotherapy adjusted analysis
 - Lesson 17: Parsimonious prognostic score (point-based)
 - Lesson 18: Model validation with train-test split
-- Lesson 19: **Advanced model diagnostics (PH and linearity tests)**
+- Lesson 19: Advanced model diagnostics (PH and linearity tests)
+- **Lesson 20: PCA of transcriptomic data**
+- **Lesson 21: Volcano plot and KM plot for novel gene**
+- **Lesson 22: Validated survival of integrated model**
+- **Lesson 23: GSEA pathway enrichment plots**
 
 ---
 
@@ -89,14 +97,15 @@ This repository provides a structured, hands-on curriculum for clinical data ana
 Tables_R_Tutorial/
 ├── R/                          # R scripts
 │   ├── setup.R                 # Package installation and verification
-│   ├── utils.R                 # Data loading, NA handling, plot saving
-│   ├── Lesson1.R … Lesson19.R  # Lessons aligned to the provided dataset
+│   ├── utils.R                 # Helper functions
+│   ├── Lesson1.R … Lesson23.R  # All lessons
 │   └── README.md               # Script documentation
 ├── Data/
-│   ├── ClinicalData.xlsx       # Main dataset (325 patients)
+│   ├── ClinicalData.xlsx       # Main clinical dataset
+│   ├── CGGA.mRNAseq_...txt     # RNA-seq expression data
 │   └── README.md               # Data documentation
-├── docs/                       # Lesson-specific explanations (1–19)
-│   ├── Lesson01.md … Lesson19.md
+├── docs/                       # Lesson-specific explanations (1–23)
+│   ├── Lesson01.md … Lesson23.md
 ├── plots/                      # Auto-saved plots from all lessons
 ├── progress_tracker.md         # Optional progress notes
 ├── LICENSE
@@ -110,6 +119,7 @@ Tables_R_Tutorial/
 ### Clinical Data (325 Patients)
 - Demographics: Age, Gender
 - Clinical Variables: Tumor Grade, Histology, IDH status, MGMT status
+- Transcriptomic Data: RNA-seq gene expression (RSEM) for ~20,000 genes
 - Treatment: Radiotherapy, Temozolomide status
 - Outcomes: Overall Survival (days), Censor (0=alive, 1=dead)
 
