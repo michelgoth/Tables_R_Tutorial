@@ -1,21 +1,39 @@
-### Lesson 2: Descriptive Statistics and Distributions
+### Lesson 2 — Descriptive Statistics and Distributions
 
-- Purpose: Summarize key variables and visualize distribution differences by a clinically relevant factor.
-- Data used: Age, Gender plus categorical counts (Grade, IDH_mutation_status).
-- Methods: Summary statistics and an age histogram stratified by gender; NA rows dropped per variable.
+We now summarize key variables and visualize distribution differences by a clinically meaningful factor (gender). Quantifying center and spread helps set expectations for later modeling and stratification.
 
-#### Walkthrough
-- Load via load_clinical_data(); inspect summary(Age) and count tables for Gender, Grade, IDH_mutation_status.
-- Plot (Age by Gender): Overlaid histograms (binwidth 5 years) with transparency to compare age distributions.
+Clinical rationale: age structure and categorical counts (grade, IDH) influence prognosis and treatment decisions. Understanding them avoids misinterpretation downstream.
 
-#### Plot generated
-- plots/Lesson2_Age_by_Gender.(png|pdf)
+Preparation
+```r
+source("R/utils.R"); load_required_packages(c("readxl","ggplot2","dplyr"))
+data <- load_clinical_data()
+```
 
-#### Clinical interpretation tips
-- Overlapping distributions: Look for age shifts between genders that might influence downstream survival or treatment choices.
-- Counts for grade and IDH: Establish baseline prevalence for later comparative analyses.
+1) Summaries and counts
+```r
+summary(data$Age)                # Min/Max, quartiles
+if ("Gender" %in% names(data)) table(data$Gender)
+if ("Grade" %in% names(data))  table(data$Grade)
+if ("IDH_mutation_status" %in% names(data)) table(data$IDH_mutation_status)
+```
+Report medians and counts, not just means, given skew typical in clinical variables.
 
-#### Reproduce
+2) Age distribution by gender
+```r
+df <- subset(data, !is.na(Age) & !is.na(Gender))
+p <- ggplot(df, aes(x = Age, fill = Gender)) +
+  geom_histogram(binwidth = 5, alpha = 0.6, position = "identity") +
+  theme_minimal() +
+  labs(title = "Age Distribution by Gender", x = "Age", y = "Count")
+save_plot_both(p, "Lesson2_Age_by_Gender")
+```
+
+Reading the figure
+- Look for shifted peaks suggesting different age profiles by gender.
+- Check tails and potential outliers; these affect hazard estimates later.
+
+Reproduce
 ```r
 Rscript R/Lesson2.R
 ```

@@ -1,23 +1,35 @@
-### Lesson 6: Multivariable Cox Proportional Hazards
+### Lesson 6 — Multivariable Cox Proportional Hazards
 
-- Purpose: Estimate adjusted effects of routine clinical predictors on overall survival.
-- Data used: OS, Censor; predictors Age, Gender, Grade, IDH_mutation_status, MGMTp_methylation_status, PRS_type, Chemo_status, Radio_status (as available).
-- Methods: Cox model (hazard ratios) and overall KM curve; NA rows removed per analysis.
+Aim: Estimate adjusted effects of routine clinical predictors on overall survival, reporting hazard ratios with confidence intervals.
 
-#### Walkthrough
-- Fit: coxph(Surv(OS, Censor) ~ Age + Gender + Grade + IDH_mutation_status + MGMTp_methylation_status + PRS_type + Chemo_status + Radio_status, data).
-- Output: HR, 95% CI, p-values; interpret HR>1 as higher hazard.
-- Overall survival: survfit(Surv(OS, Censor) ~ 1) to display the cohort’s baseline survival.
+Clinical relevance: quantifies how each factor shifts risk when considered together (e.g., IDH, grade, treatment variables), moving beyond unadjusted comparisons.
 
-#### Plot generated
-- plots/Lesson6_KM_Overall.(png|pdf)
+Preparation
+```r
+source("R/utils.R"); load_required_packages(c("survival","readxl","dplyr","ggplot2"))
+data <- load_clinical_data()
+```
 
-#### Clinical interpretation tips
-- Age HR>1: higher risk per unit year; check magnitude and CI.
-- IDH Wildtype vs Mutant: typically higher hazard; confirm direction.
-- Treatment covariates (Chemo/Radio): reflect associations, not causation.
+Steps
+1) Fit the Cox model (complete cases per variables used)
+```r
+cox_model <- coxph(Surv(OS, Censor) ~ Age + Gender + Grade + IDH_mutation_status +
+                   MGMTp_methylation_status + PRS_type + Chemo_status + Radio_status,
+                   data = data)
+summary(cox_model)
+```
+2) Overall KM for cohort context
+```r
+km_fit <- survfit(Surv(OS, Censor) ~ 1)
+# Saved as Lesson6_KM_Overall
+```
 
-#### Reproduce
+Interpretation
+- HR > 1 increases hazard (worse prognosis); HR < 1 decreases hazard.
+- Focus on magnitude, confidence intervals, and plausibility, not just p‑values.
+- Treatment variables capture association, not causation.
+
+Reproduce
 ```r
 Rscript R/Lesson6.R
 ```

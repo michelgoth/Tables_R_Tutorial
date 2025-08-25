@@ -1,22 +1,36 @@
-### Lesson 8: Comparing Continuous Variables Across Groups
+### Lesson 8 — Comparing Continuous Variables Across Groups
 
-- Purpose: Compare central tendency across clinical groups using non-parametric tests.
-- Data used: Age with IDH_mutation_status; OS with MGMTp_methylation_status; fallback Age by Grade.
-- Methods: Wilcoxon rank-sum (or t-test if appropriate). NA rows removed; factor levels dropped.
+Goal: Compare central tendency across clinical groups using non‑parametric tests and display with boxplots.
 
-#### Walkthrough
-- Age ~ IDH: wilcox.test() if IDH has two levels.
-- OS ~ MGMT: wilcox.test() if MGMT has two levels.
-- Plots: Boxplots of OS by MGMT, or Age by Grade if MGMT view not available.
+Clinical angle: robust comparisons (e.g., OS by MGMT, Age by Grade) that tolerate skew common in clinical data.
 
-#### Plots generated
-- plots/Lesson8_OS_by_MGMT.(png|pdf) or plots/Lesson8_Age_by_Grade.(png|pdf)
+Preparation
+```r
+source("R/utils.R"); load_required_packages(c("readxl","ggplot2","dplyr"))
+data <- load_clinical_data()
+```
 
-#### Clinical interpretation tips
-- Median differences matter clinically; report IQRs.
-- Non-parametric tests are robust with skewed clinical data.
+1) Age by IDH (Wilcoxon)
+```r
+df <- subset(data, !is.na(Age) & !is.na(IDH_mutation_status))
+if (nlevels(droplevels(df$IDH_mutation_status)) == 2) print(wilcox.test(Age ~ IDH_mutation_status, data = df))
+```
+2) OS by MGMT (Wilcoxon) and boxplot
+```r
+df <- subset(data, !is.na(OS) & !is.na(MGMTp_methylation_status))
+if (nlevels(droplevels(df$MGMTp_methylation_status)) == 2) print(wilcox.test(OS ~ MGMTp_methylation_status, data = df))
+p <- ggplot(df, aes(x = MGMTp_methylation_status, y = OS, fill = MGMTp_methylation_status)) +
+  geom_boxplot() + theme_minimal() +
+  labs(title = "OS by MGMT Methylation Status", x = "MGMT Status", y = "Overall Survival (days)")
+save_plot_both(p, "Lesson8_OS_by_MGMT")
+```
+Fallback: Age by Grade boxplot when MGMT view is unavailable.
 
-#### Reproduce
+Interpretation
+- Emphasize medians and IQRs; report sample sizes.
+- Non‑parametric tests reduce assumptions; discuss clinical magnitude.
+
+Reproduce
 ```r
 Rscript R/Lesson8.R
 ```

@@ -1,22 +1,31 @@
-### Lesson 7: Association Tests (Chi-square and Fisher)
+### Lesson 7 — Association Tests (Chi‑square and Fisher)
 
-- Purpose: Test association between two categorical clinical variables.
-- Data used: IDH_mutation_status, Grade; Gender, MGMTp_methylation_status.
-- Methods: Chi-square test for IDH×Grade; Fisher’s exact for Gender×MGMT. NA rows removed and levels dropped.
+Objective: Test whether two categorical variables are associated. We apply a Chi‑square test for IDH×Grade and Fisher’s exact test for Gender×MGMT when counts are small.
 
-#### Walkthrough
-- Table IDH×Grade and apply chisq.test(); report X², df, p-value.
-- Table Gender×MGMT and apply fisher.test(); report odds ratio and CI.
-- Bar plot: IDH by Grade to visualize group counts.
+Clinical relevance: detects non‑random distributions (e.g., IDH status varying by grade), informing stratification and reporting.
 
-#### Plot generated
-- plots/Lesson7_IDH_by_Grade.(png|pdf)
+Preparation
+```r
+source("R/utils.R"); load_required_packages(c("readxl","ggplot2"))
+data <- load_clinical_data()
+```
 
-#### Clinical interpretation tips
-- Significant association suggests non-random distribution across categories (e.g., IDH distribution differs by grade).
-- Fisher’s exact is preferred when expected counts are small.
+1) IDH × Grade (Chi‑square)
+```r
+tab <- table(subset(data, !is.na(IDH_mutation_status) & !is.na(Grade))[,c("IDH_mutation_status","Grade")])
+chisq.test(tab)
+# Plot saved as Lesson7_IDH_by_Grade
+```
+2) Gender × MGMT (Fisher’s exact)
+```r
+fisher.test(table(subset(data, !is.na(Gender) & !is.na(MGMTp_methylation_status))[,c("Gender","MGMTp_methylation_status")]))
+```
 
-#### Reproduce
+Interpretation
+- Report test, statistic, p‑value (and odds ratio for Fisher).
+- Practical significance depends on effect size and clinical context.
+
+Reproduce
 ```r
 Rscript R/Lesson7.R
 ```
