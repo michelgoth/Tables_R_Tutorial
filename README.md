@@ -21,11 +21,11 @@ This repository provides a structured, hands-on curriculum for clinical data ana
 
 ## Key Features
 
-### Curriculum (Lessons 1–18)
+### Curriculum (Lessons 1–19)
 - Lessons 1–3: Import, descriptive statistics, categorical visualization
 - Lessons 4–6: Kaplan–Meier, log-rank test, multivariable Cox
 - Lessons 7–11: Association tests, group comparisons, logistic regression, correlation, ANOVA/MANOVA
-- Lessons 12–18: Clinician extensions (baseline/missingness/PH checks), ML basics, IDH×MGMT joint groups, TMZ×MGMT interaction, radiotherapy adjusted analysis, parsimonious risk score, and **model validation**
+- Lessons 12–19: Clinician extensions, ML basics, joint molecular groups, treatment interactions, adjusted analysis, prognostic scoring, model validation, and **assumption testing**
 
 ### Visualization
 - Publication-ready plots saved to `plots/` (PDF and PNG)
@@ -78,7 +78,8 @@ This repository provides a structured, hands-on curriculum for clinical data ana
 - Lesson 15: Temozolomide benefit and MGMT interaction
 - Lesson 16: Radiotherapy adjusted analysis
 - Lesson 17: Parsimonious prognostic score (point-based)
-- Lesson 18: **Model validation with train-test split**
+- Lesson 18: Model validation with train-test split
+- Lesson 19: **Advanced model diagnostics (PH and linearity tests)**
 
 ---
 
@@ -89,13 +90,13 @@ Tables_R_Tutorial/
 ├── R/                          # R scripts
 │   ├── setup.R                 # Package installation and verification
 │   ├── utils.R                 # Data loading, NA handling, plot saving
-│   ├── Lesson1.R … Lesson18.R  # Lessons aligned to the provided dataset
+│   ├── Lesson1.R … Lesson19.R  # Lessons aligned to the provided dataset
 │   └── README.md               # Script documentation
 ├── Data/
 │   ├── ClinicalData.xlsx       # Main dataset (325 patients)
 │   └── README.md               # Data documentation
-├── docs/                       # Lesson-specific explanations (1–18)
-│   ├── Lesson01.md … Lesson18.md
+├── docs/                       # Lesson-specific explanations (1–19)
+│   ├── Lesson01.md … Lesson19.md
 ├── plots/                      # Auto-saved plots from all lessons
 ├── progress_tracker.md         # Optional progress notes
 ├── LICENSE
