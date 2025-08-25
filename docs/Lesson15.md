@@ -1,32 +1,24 @@
-### Lesson 15: Tutorial
+### Lesson 15: Temozolomide (TMZ) Benefit and MGMT Interaction
 
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson15.R.
-- Plots: Saved under plots/ as Lesson15_*.(png|pdf).
-
-#### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson15.R with commentary.
-- Interpretation: Clinically interpret outputs.
-
-#### Repro commands
-
-
-### Lesson 15: Tutorial
-
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson0.R.
-- Plots: Saved under plots/ as Lesson0_*.(png|pdf).
+- Purpose: Evaluate association between TMZ and survival, and whether MGMT modifies this effect.
+- Data used: OS, Censor; Chemo_status (TMZ vs No TMZ), MGMTp_methylation_status; optional Age, Grade.
+- Methods: KM within MGMT strata (TMZ vs No TMZ); Cox with Chemo × MGMT interaction adjusted for key covariates. NA removed; levels dropped.
 
 #### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson0.R with commentary.
-- Interpretation: Clinically interpret outputs.
+- Stratify by MGMT; for each stratum, fit KM comparing TMZ vs No TMZ.
+- Fit Cox: Surv(OS, Censor) ~ Chemo × MGMT (+ Age + Grade if available); plot main and interaction HRs.
 
-#### Repro commands
+#### Plots generated
+- plots/Lesson15_KM_Treatment_by_MGMT_<level>.(png|pdf)
+- plots/Lesson15_Forest_Treatment_Interaction.(png|pdf)
+
+#### Clinical interpretation tips
+- Expect greater TMZ association in methylated MGMT; interaction quantifies effect modification.
+- Observational association; not causal without randomization.
+
+#### Reproduce
+```r
+Rscript R/Lesson15.R
+```
 
 

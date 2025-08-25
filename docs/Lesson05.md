@@ -1,32 +1,22 @@
-### Lesson 5: Tutorial
+### Lesson 5: Log-rank Test (MGMT or IDH)
 
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson5.R.
-- Plots: Saved under plots/ as Lesson5_*.(png|pdf).
-
-#### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson5.R with commentary.
-- Interpretation: Clinically interpret outputs.
-
-#### Repro commands
-
-
-### Lesson 5: Tutorial
-
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson0.R.
-- Plots: Saved under plots/ as Lesson0_*.(png|pdf).
+- Purpose: Formally test survival differences between groups.
+- Data used: OS, Censor with either MGMTp_methylation_status or IDH_mutation_status.
+- Methods: survdiff log-rank; KM plot for the tested factor; NA dropped per analysis.
 
 #### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson0.R with commentary.
-- Interpretation: Clinically interpret outputs.
+- Primary: Test OS~MGMTp_methylation_status; print chi-square and p-value.
+- Fallback: If MGMT unavailable, test OS~IDH_mutation_status.
+- Save the corresponding KM plot.
 
-#### Repro commands
+#### Plots generated
+- plots/Lesson5_KM_by_MGMT.(png|pdf) or plots/Lesson5_KM_by_IDH.(png|pdf)
 
+#### Clinical interpretation tips
+- p<0.05 suggests survival distributions differ; inspect KM curves to understand direction and magnitude.
+- Ensure groups are clinically meaningful and of adequate size.
 
+#### Reproduce
+```r
+Rscript R/Lesson5.R
+```

@@ -1,32 +1,24 @@
-### Lesson 8: Tutorial
+### Lesson 8: Comparing Continuous Variables Across Groups
 
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson8.R.
-- Plots: Saved under plots/ as Lesson8_*.(png|pdf).
-
-#### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson8.R with commentary.
-- Interpretation: Clinically interpret outputs.
-
-#### Repro commands
-
-
-### Lesson 8: Tutorial
-
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson0.R.
-- Plots: Saved under plots/ as Lesson0_*.(png|pdf).
+- Purpose: Compare central tendency across clinical groups using non-parametric tests.
+- Data used: Age with IDH_mutation_status; OS with MGMTp_methylation_status; fallback Age by Grade.
+- Methods: Wilcoxon rank-sum (or t-test if appropriate). NA rows removed; factor levels dropped.
 
 #### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson0.R with commentary.
-- Interpretation: Clinically interpret outputs.
+- Age ~ IDH: wilcox.test() if IDH has two levels.
+- OS ~ MGMT: wilcox.test() if MGMT has two levels.
+- Plots: Boxplots of OS by MGMT, or Age by Grade if MGMT view not available.
 
-#### Repro commands
+#### Plots generated
+- plots/Lesson8_OS_by_MGMT.(png|pdf) or plots/Lesson8_Age_by_Grade.(png|pdf)
+
+#### Clinical interpretation tips
+- Median differences matter clinically; report IQRs.
+- Non-parametric tests are robust with skewed clinical data.
+
+#### Reproduce
+```r
+Rscript R/Lesson8.R
+```
 
 

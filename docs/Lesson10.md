@@ -1,32 +1,23 @@
-### Lesson 10: Tutorial
+### Lesson 10: Correlation Among Numeric Clinical Variables
 
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson10.R.
-- Plots: Saved under plots/ as Lesson10_*.(png|pdf).
-
-#### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson10.R with commentary.
-- Interpretation: Clinically interpret outputs.
-
-#### Repro commands
-
-
-### Lesson 10: Tutorial
-
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson0.R.
-- Plots: Saved under plots/ as Lesson0_*.(png|pdf).
+- Purpose: Identify linear relationships among core numeric variables.
+- Data used: Age, OS, Censor, Chemo_status, Radio_status (numeric encoding).
+- Methods: Correlation matrix with corrplot; NA rows removed across selected columns.
 
 #### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson0.R with commentary.
-- Interpretation: Clinically interpret outputs.
+- Select available numeric columns; compute cor() and display rounded matrix.
+- Visualize upper triangle with corrplot (circles), saved to files.
 
-#### Repro commands
+#### Plot generated
+- plots/Lesson10_Correlation_Matrix.(png|pdf)
+
+#### Clinical interpretation tips
+- Moderate/strong correlations inform multicollinearity in models and clinical co-occurrence.
+- Censor is an event indicator; negative correlation with OS is expected.
+
+#### Reproduce
+```r
+Rscript R/Lesson10.R
+```
 
 

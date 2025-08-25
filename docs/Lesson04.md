@@ -1,32 +1,21 @@
-### Lesson 4: Tutorial
+### Lesson 4: Kaplan–Meier Survival by IDH Status
 
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson4.R.
-- Plots: Saved under plots/ as Lesson4_*.(png|pdf).
-
-#### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson4.R with commentary.
-- Interpretation: Clinically interpret outputs.
-
-#### Repro commands
-
-
-### Lesson 4: Tutorial
-
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson0.R.
-- Plots: Saved under plots/ as Lesson0_*.(png|pdf).
+- Purpose: Compare overall survival between IDH mutation groups.
+- Data used: OS (days), Censor (0=alive,1=dead), IDH_mutation_status.
+- Methods: survfit Kaplan–Meier by IDH; NA rows removed for OS/Censor/IDH.
 
 #### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson0.R with commentary.
-- Interpretation: Clinically interpret outputs.
+- Create Surv(OS, Censor) and fit KM curves stratified by IDH_mutation_status.
+- Save plots using base R to avoid extra dependencies.
 
-#### Repro commands
+#### Plot generated
+- plots/Lesson4_KM_by_IDH.(png|pdf)
 
+#### Clinical interpretation tips
+- Curves separated imply survival differences by IDH; formal testing comes in Lesson 5.
+- Watch for small strata; wide CIs and unstable estimates can occur.
 
+#### Reproduce
+```r
+Rscript R/Lesson4.R
+```

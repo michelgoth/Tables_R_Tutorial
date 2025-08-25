@@ -1,32 +1,25 @@
-### Lesson 17: Tutorial
+### Lesson 17: Parsimonious Prognostic Score
 
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson17.R.
-- Plots: Saved under plots/ as Lesson17_*.(png|pdf).
-
-#### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson17.R with commentary.
-- Interpretation: Clinically interpret outputs.
-
-#### Repro commands
-
-
-### Lesson 17: Tutorial
-
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson0.R.
-- Plots: Saved under plots/ as Lesson0_*.(png|pdf).
+- Purpose: Derive a simple point-based score from a multivariable Cox model for bedside risk stratification.
+- Data used: OS, Censor; predictors Age, Grade, IDH_mutation_status, MGMTp_methylation_status.
+- Methods: Fit Cox, scale coefficients to integer points, compute patient score, define tertiles, and plot KM by risk. NA removed; levels dropped.
 
 #### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson0.R with commentary.
-- Interpretation: Clinically interpret outputs.
+- Model: Surv(OS, Censor) ~ Age + Grade + IDH + MGMT on complete cases.
+- Points: Scale beta coefficients to integers; present a scorecard figure.
+- Risk strata: Tertiles of total score → KM curves for Low/Medium/High risk.
 
-#### Repro commands
+#### Plots generated
+- plots/Lesson17_Scorecard_Table.(png|pdf)
+- plots/Lesson17_Score_KM_by_Tertile.(png|pdf)
+
+#### Clinical interpretation tips
+- Score is an interpretable summary of model risk; validate before clinical use.
+- Check calibration and discrimination externally.
+
+#### Reproduce
+```r
+Rscript R/Lesson17.R
+```
 
 

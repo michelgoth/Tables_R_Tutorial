@@ -1,32 +1,24 @@
-### Lesson 11: Tutorial
+### Lesson 11: ANOVA/MANOVA for Group Comparisons
 
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson11.R.
-- Plots: Saved under plots/ as Lesson11_*.(png|pdf).
-
-#### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson11.R with commentary.
-- Interpretation: Clinically interpret outputs.
-
-#### Repro commands
-
-
-### Lesson 11: Tutorial
-
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson0.R.
-- Plots: Saved under plots/ as Lesson0_*.(png|pdf).
+- Purpose: Test mean differences across groups and multiple outcomes.
+- Data used: OS (and Age) by Grade; optional Gender for two-way ANOVA.
+- Methods: One-way ANOVA (OS ~ Grade), two-way ANOVA (OS ~ Grade*Gender), MANOVA for (Age, OS) ~ Grade. NA rows removed; levels dropped.
 
 #### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson0.R with commentary.
-- Interpretation: Clinically interpret outputs.
+- One-way ANOVA: report F and p for grade effect; save OS-by-Grade boxplot.
+- Two-way ANOVA: test interaction Grade×Gender and interpret.
+- MANOVA: assess multivariate differences, then per-outcome ANOVAs.
 
-#### Repro commands
+#### Plot generated
+- plots/Lesson11_OS_by_Grade.(png|pdf)
+
+#### Clinical interpretation tips
+- Highly significant grade effects on OS are expected; check effect sizes and assumptions.
+- Interaction absence suggests additive effects of Grade and Gender.
+
+#### Reproduce
+```r
+Rscript R/Lesson11.R
+```
 
 

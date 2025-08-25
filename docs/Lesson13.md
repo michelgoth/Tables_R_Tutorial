@@ -1,32 +1,24 @@
-### Lesson 13: Tutorial
+### Lesson 13: Machine Learning Basics for Clinical Prediction
 
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson13.R.
-- Plots: Saved under plots/ as Lesson13_*.(png|pdf).
-
-#### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson13.R with commentary.
-- Interpretation: Clinically interpret outputs.
-
-#### Repro commands
-
-
-### Lesson 13: Tutorial
-
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson0.R.
-- Plots: Saved under plots/ as Lesson0_*.(png|pdf).
+- Purpose: Demonstrate simple predictive workflows and feature importance using internal data.
+- Data used: Derived 1-year survival outcome from OS/Censor; features Age, Gender, Grade, IDH_mutation_status, MGMTp_methylation_status, PRS_type.
+- Methods: Random Forest with importance plot; optional SVM/Decision Tree and cross-validation (see script). NA handled per model step.
 
 #### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson0.R with commentary.
-- Interpretation: Clinically interpret outputs.
+- Create binary outcome for 1-year survival (approximation from OS and Censor).
+- Fit Random Forest; report feature importance; show importance bar plot.
+- (Optional) Train/test split and CV to compare algorithms.
 
-#### Repro commands
+#### Plot generated
+- plots/Lesson13_RF_Feature_Importance.(png|pdf)
+
+#### Clinical interpretation tips
+- Importance highlights influential variables; treat as hypothesis-generating.
+- Do not over-interpret single-cohort ML metrics; external validation is needed.
+
+#### Reproduce
+```r
+Rscript R/Lesson13.R
+```
 
 

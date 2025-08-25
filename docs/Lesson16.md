@@ -1,32 +1,24 @@
-### Lesson 16: Tutorial
+### Lesson 16: Radiotherapy — Adjusted Survival Analysis
 
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson16.R.
-- Plots: Saved under plots/ as Lesson16_*.(png|pdf).
-
-#### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson16.R with commentary.
-- Interpretation: Clinically interpret outputs.
-
-#### Repro commands
-
-
-### Lesson 16: Tutorial
-
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson0.R.
-- Plots: Saved under plots/ as Lesson0_*.(png|pdf).
+- Purpose: Assess association of radiotherapy with survival, adjusting for confounders.
+- Data used: OS, Censor; Radio_status; optional Age, Grade, IDH_mutation_status, MGMTp_methylation_status.
+- Methods: KM (RT vs No RT) for description; adjusted Cox with Radio_status term. NA removed; levels dropped.
 
 #### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson0.R with commentary.
-- Interpretation: Clinically interpret outputs.
+- Fit KM for RT vs No RT; interpret descriptive separation.
+- Fit Cox: Surv(OS, Censor) ~ Radio + (Age + Grade + IDH + MGMT as available); plot RT HR.
 
-#### Repro commands
+#### Plots generated
+- plots/Lesson16_KM_Radiotherapy.(png|pdf)
+- plots/Lesson16_Forest_Radiotherapy_Adjusted.(png|pdf)
+
+#### Clinical interpretation tips
+- Treatment selection bias is likely; interpret adjusted association cautiously.
+- Consider propensity or trial data for causal inference.
+
+#### Reproduce
+```r
+Rscript R/Lesson16.R
+```
 
 

@@ -1,32 +1,24 @@
-### Lesson 7: Tutorial
+### Lesson 7: Association Tests (Chi-square and Fisher)
 
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson7.R.
-- Plots: Saved under plots/ as Lesson7_*.(png|pdf).
-
-#### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson7.R with commentary.
-- Interpretation: Clinically interpret outputs.
-
-#### Repro commands
-
-
-### Lesson 7: Tutorial
-
-- Purpose: Clinical objective and takeaways.
-- Data used: ClinicalData.xlsx standardized via R/utils.R.
-- Methods: Key steps from R/Lesson0.R.
-- Plots: Saved under plots/ as Lesson0_*.(png|pdf).
+- Purpose: Test association between two categorical clinical variables.
+- Data used: IDH_mutation_status, Grade; Gender, MGMTp_methylation_status.
+- Methods: Chi-square test for IDH×Grade; Fisher’s exact for Gender×MGMT. NA rows removed and levels dropped.
 
 #### Walkthrough
-- Setup: source('R/utils.R'); load_required_packages(...); data <- load_clinical_data().
-- NA handling: filter_complete_cases(); droplevels() as needed.
-- Analysis: Reproduce code sections from R/Lesson0.R with commentary.
-- Interpretation: Clinically interpret outputs.
+- Table IDH×Grade and apply chisq.test(); report X², df, p-value.
+- Table Gender×MGMT and apply fisher.test(); report odds ratio and CI.
+- Bar plot: IDH by Grade to visualize group counts.
 
-#### Repro commands
+#### Plot generated
+- plots/Lesson7_IDH_by_Grade.(png|pdf)
+
+#### Clinical interpretation tips
+- Significant association suggests non-random distribution across categories (e.g., IDH distribution differs by grade).
+- Fisher’s exact is preferred when expected counts are small.
+
+#### Reproduce
+```r
+Rscript R/Lesson7.R
+```
 
 
