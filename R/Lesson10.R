@@ -14,14 +14,21 @@ if (!interactive() && is.null(getOption("repos")["CRAN"])) {
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
+# For this lesson, we need `corrplot` for visualization and `dplyr` for data manipulation.
 source("R/utils.R")
-# 'corrplot' is a specialized package for visualizing correlation matrices.
-load_required_packages(c("readxl", "dplyr", "corrplot"))
+load_required_packages(c("readxl", "corrplot", "RColorBrewer", "dplyr"))
 
-data <- load_clinical_data("Data/ClinicalData.xlsx")
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
 
 # ===============================================================
-# SECTION 1: DATA PREPARATION FOR CORRELATION ANALYSIS --------
+# SECTION 1: CALCULATING A CORRELATION MATRIX -----------------
+# Correlation measures the linear relationship between two continuous
+# variables. The correlation coefficient ranges from -1 to +1:
+# +1: Perfect positive correlation (as one variable goes up, the other goes up).
+# -1: Perfect negative correlation (as one variable goes up, the other goes down).
+#  0: No linear correlation.
 # ===============================================================
 
 # Define the set of numeric/binary columns we want to analyze.
@@ -34,13 +41,13 @@ if (length(available_cols) < 2) {
   cat("Warning: Need at least 2 numeric columns for correlation analysis.\n")
 } else {
   # 1. Select only the numeric columns from the main data frame.
-  # 2. Remove any rows that have missing values ('NA') in ANY of the selected columns.
-  #    Correlation can only be calculated on complete pairs of data.
+  # 2. NOTE: In the original script, we removed rows with missing values here.
+  #    Since we are now using the imputed dataset, this step is no longer needed,
+  #    and the analysis will be run on the full cohort.
   numeric_data <- data %>%
-    dplyr::select(dplyr::all_of(available_cols)) %>%
-    stats::na.omit()
+    dplyr::select(dplyr::all_of(available_cols))
 
-  cat("Sample size after removing NA values:", nrow(numeric_data), "patients\n")
+  cat("Sample size for correlation analysis:", nrow(numeric_data), "patients\n")
 
   # ===============================================================
   # SECTION 2: COMPUTE AND VISUALIZE THE CORRELATION MATRIX ------

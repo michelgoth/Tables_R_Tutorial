@@ -130,18 +130,53 @@ save_plot_list_both <- function(plot_list, base_filename) {
   }
 }
 
-#' @title Filter for Complete Cases
-#' @description Safely removes rows from a data frame that have missing values
-#'   in a specified set of columns.
-#' @param df The input data frame.
-#' @param cols A character vector of column names to check for completeness.
-#' @return A data frame with rows containing NAs in the specified columns removed.
-filter_complete_cases <- function(df, cols) {
-  # This makes sure the function doesn't fail if a column name doesn't exist.
-  valid_cols <- intersect(cols, names(df))
-  if (length(valid_cols) == 0) return(df)
-  # 'complete.cases' returns a logical vector (TRUE/FALSE) for rows that are complete.
-  df[stats::complete.cases(df[, valid_cols]), ]
+#' Impute Missing Clinical Data
+#'
+#' @description
+#' This function takes the raw clinical data and uses multiple imputation
+#' via the `mice` package to fill in missing values.
+#'
+#' @param df The raw clinical data frame from `load_clinical_data`.
+#' @param seed A random seed for reproducibility.
+#' @return A data frame with missing values imputed.
+impute_clinical_data <- function(df, seed = 123) {
+  load_required_packages("mice")
+  
+  # Store Patient_ID and other non-imputed columns to re-attach later
+  patient_ids <- df$CGGA_ID
+  gender_col <- df$Gender
+  
+  # Select columns for imputation
+  vars_to_impute <- c(
+    "PRS_type", "Grade", "Age", "OS", "Censor",
+    "Radio_status", "Chemo_status", "IDH_mutation_status",
+    "MGMTp_methylation_status"
+  )
+  imputable_df <- df[, names(df) %in% vars_to_impute]
+  
+  # Run the MICE algorithm
+  imputed_data <- mice(imputable_df, m = 5, maxit = 5, method = 'pmm', seed = seed, printFlag = FALSE)
+  
+  # Get the first completed dataset
+  df_complete <- complete(imputed_data, 1)
+  
+  # Add the preserved columns back
+  df_complete$Patient_ID <- patient_ids
+  df_complete$Gender <- gender_col
+
+  # --- Re-apply Data Types ---
+  numeric_cols <- c("Age", "OS", "Censor", "Chemo_status", "Radio_status")
+  for (col in numeric_cols) {
+    if (col %in% names(df_complete)) df_complete[[col]] <- as.numeric(df_complete[[col]])
+  }
+  factor_cols <- c("Grade", "PRS_type", "IDH_mutation_status", "MGMTp_methylation_status")
+  for (col in factor_cols) {
+    if (col %in% names(df_complete)) {
+      df_complete[[col]] <- factor(df_complete[[col]])
+    }
+  }
+  
+  return(df_complete)
 }
 
 #' @title A Consistent ggplot2 Theme for Clinical Plots
@@ -162,6 +197,45 @@ clinical_theme <- function(base_size = 12) {
 print_session_info <- function() {
   cat("\n--- Session Info ---\n")
   print(utils::sessionInfo())
+}
+
+# --- Transcriptomic Helper Functions ---
+
+#' Load RNA-seq Data
+load_rnaseq_data <- function(file_path) {
+  df <- read.delim(file_path, row.names = 1, check.names = FALSE)
+  rownames(df) <- sub("_.*", "", rownames(df))
+  return(df)
+}
+
+#' Integrate Clinical and RNA-seq Data
+integrate_data <- function(clinical_df, rnaseq_df) {
+  common_samples <- intersect(clinical_df$Patient_ID, colnames(rnaseq_df))
+  
+  clinical_df <- clinical_df[clinical_df$Patient_ID %in% common_samples, ]
+  rnaseq_df <- rnaseq_df[, common_samples]
+  
+  clinical_df <- clinical_df[order(clinical_df$Patient_ID), ]
+  rnaseq_df <- rnaseq_df[, order(colnames(rnaseq_df))]
+  
+  load_required_packages("DESeq2")
+  
+  # Create a DESeqDataSet object with the clinical data in the colData slot
+  dds <- DESeqDataSetFromMatrix(
+    countData = round(rnaseq_df),
+    colData = clinical_df, # Use the actual clinical data here
+    design = ~ 1
+  )
+  
+  # Apply the VST
+  vsd <- vst(dds, blind = TRUE)
+  
+  return(list(
+    clinical = clinical_df, 
+    vst_counts = assay(vsd), 
+    vsd = vsd,
+    raw_counts = as.matrix(round(rnaseq_df)) # Ensure output is a matrix
+  ))
 }
 
 

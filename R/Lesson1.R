@@ -27,16 +27,11 @@ source("R/utils.R")
 # 'ggplot2' is for plotting, and 'dplyr' is for data manipulation.
 load_required_packages(c("ggplot2", "dplyr", "tidyr", "ggpubr", "rstatix", "readxl"))
 
-# Use our helper function to load the Excel data into a variable called 'data'.
-# This variable, known as a data frame, is like a spreadsheet or table in R.
-data <- load_clinical_data("Data/ClinicalData.xlsx")
+# Load and preprocess the clinical data using our helper function
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
 
-# For plotting, it's often best to remove patients with missing data for the
-# variables you are currently plotting. This prevents errors or warnings.
-# We create new, temporary data frames for each plot.
-data_age <- filter_complete_cases(data, c("Age"))
-data_grade_gender <- filter_complete_cases(data, c("Grade", "Gender"))
-data_prs_grade <- filter_complete_cases(data, c("PRS_type", "Grade"))
+# Use the new imputation function to handle missing data
+data <- impute_clinical_data(raw_data)
 
 # SECTION 2: DATA STRUCTURE CHECK -----------------------------
 
@@ -53,7 +48,7 @@ head(data)
 
 # --- Plot 1: Histogram of Age ---
 # A histogram is used to visualize the distribution of a single continuous variable.
-p1 <- ggplot(data_age, aes(x = Age)) +
+p1 <- ggplot(data, aes(x = Age)) +
   geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
   labs(title = "Age Distribution", x = "Age", y = "Count") +
   theme_minimal()
@@ -66,7 +61,7 @@ save_plot_both(p1, base_filename = "Lesson1_Age_Distribution")
 
 # --- Plot 2: Bar plot of Tumor Grade by Gender ---
 # A bar plot is used to show the relationship between two categorical variables.
-p2 <- ggplot(data_grade_gender, aes(x = Grade, fill = Gender)) +
+p2 <- ggplot(data, aes(x = Grade, fill = Gender)) +
   # 'geom_bar()' creates the bars. 'position = "dodge"' places the bars for
   # different genders next to each other, rather than stacked.
   geom_bar(position = "dodge") +
@@ -78,7 +73,7 @@ save_plot_both(p2, base_filename = "Lesson1_Grade_by_Gender")
 
 # --- Plot 3: Proportional Bar Plot ---
 # We can also customize plots to show proportions instead of counts.
-p3 <- ggplot(data_prs_grade, aes(x = PRS_type, fill = Grade)) +
+p3 <- ggplot(data, aes(x = PRS_type, fill = Grade)) +
   # 'position = "fill"' makes each bar go up to 100% and shows the
   # proportion of each 'Grade' within each 'PRS_type'.
   geom_bar(position = "fill") +

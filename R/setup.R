@@ -64,10 +64,11 @@ core_packages <- c(
 # Statistical analysis packages
 stats_packages <- c(
   "survival",    # Survival analysis
-  # "survminer",   # Survival visualization (optional)
+  "survminer",   # Survival visualization (optional)
   "rstatix",     # Statistical testing (used in early lessons)
   "car",         # Levene's test in ANOVA assumptions
-  "MASS", "broom"
+  "MASS", "broom",
+  "mice"         # <-- ADDED: For multiple imputation
 )
 
 # Visualization packages
@@ -75,7 +76,8 @@ viz_packages <- c(
   "ggpubr",      # Publication-ready plots
   "corrplot",    # Correlation matrices
   "RColorBrewer", # Color palettes
-  "scales"       # Scale functions for ggplot2
+  "scales",      # Scale functions for ggplot2
+  "gtsummary"    # <-- ADDED: For publication-ready tables
 )
 
 # ML and advanced modeling packages

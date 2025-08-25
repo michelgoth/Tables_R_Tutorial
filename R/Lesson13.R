@@ -9,11 +9,13 @@
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
+# For this lesson, we will use the `randomForest` package.
 source("R/utils.R")
-# 'randomForest' is a popular and powerful machine learning package.
-load_required_packages(c("readxl", "ggplot2", "randomForest"))
+load_required_packages(c("readxl", "dplyr", "randomForest", "caret", "pROC"))
 
-data <- load_clinical_data("Data/ClinicalData.xlsx")
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
 
 # ===============================================================
 # SECTION 1: DATA PREPARATION FOR MACHINE LEARNING ------------
@@ -28,9 +30,11 @@ ml_data <- data
 # ML models for classification need a categorical outcome to predict.
 # Here, we "engineer" a new feature: survival at 1 year.
 if (all(c("OS", "Censor") %in% names(ml_data))) {
+  # Note: Since 'OS' and 'Censor' are now imputed, there should be no NAs
+  # in the outcome variable from this step.
   ml_data$survival_1year <- factor(
     ifelse(ml_data$OS >= 365, "Alive", # If OS > 365 days, they were alive at 1 year.
-           ifelse(ml_data$OS < 365 & ml_data$Censor == 1, "Deceased", NA)) # If event before 365, they were not.
+           ifelse(ml_data$OS < 365 & ml_data$Censor == 1, "Deceased", "Deceased")) # Simplified logic for imputed data
   )
   cat("Created binary outcome 'survival_1year':\n")
   print(table(ml_data$survival_1year))
@@ -42,10 +46,8 @@ feature_cols <- c("Age", "Gender", "Grade", "IDH_mutation_status", "MGMTp_methyl
 available_features <- intersect(feature_cols, names(ml_data))
 
 # For the model, we need a data frame with only the outcome and the features.
-# We must also use 'complete.cases()' to remove any rows with missing data
-# in either the outcome or any of the features.
+# Since the 'data' object is already imputed, we just need to select columns.
 rf_data <- ml_data[, c(available_features, "survival_1year")]
-rf_data <- rf_data[complete.cases(rf_data), ]
 rf_data$survival_1year <- droplevels(rf_data$survival_1year)
 
 

@@ -15,15 +15,11 @@ if (!interactive() && is.null(getOption("repos")["CRAN"])) {
 
 # SECTION 0: SETUP ---------------------------------------------
 source("R/utils.R")
-load_required_packages(c("readxl", "ggplot2", "survival"))
+load_required_packages(c("readxl", "ggplot2", "survival", "survminer"))
 
-data <- load_clinical_data("Data/ClinicalData.xlsx")
-
-# Create clean data frames for the survival analysis, removing patients
-# with missing data for the key variables.
-data_surv <- filter_complete_cases(data, c("OS", "Censor"))
-data_surv_mgmt <- filter_complete_cases(data, c("OS", "Censor", "MGMTp_methylation_status"))
-data_surv_idh <- filter_complete_cases(data, c("OS", "Censor", "IDH_mutation_status"))
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
 
 # ===============================================================
 # SECTION 1: RUNNING THE LOG-RANK TEST --------------------------
@@ -36,38 +32,46 @@ data_surv_idh <- filter_complete_cases(data, c("OS", "Censor", "IDH_mutation_sta
 # A small p-value (< 0.05) gives us evidence to reject the null hypothesis.
 # ===============================================================
 
-if (all(c("OS", "Censor") %in% names(data_surv))) {
+if (all(c("OS", "Censor") %in% names(data))) {
   # Create a survival object from the main dataset for general use.
-  surv_obj <- Surv(data_surv$OS, data_surv$Censor)
+  surv_obj <- Surv(data$OS, data$Censor)
 
   # --- Test 1: Compare survival by MGMT methylation status ---
-  if (all(c("MGMTp_methylation_status") %in% names(data_surv_mgmt))) {
+  if (all(c("MGMTp_methylation_status") %in% names(data))) {
 
     # The 'survdiff()' function performs the log-rank test.
     # The formula is the same as the one used for survfit() in Lesson 4.
-    fit <- survdiff(Surv(OS, Censor) ~ MGMTp_methylation_status, data = data_surv_mgmt)
+    fit <- survdiff(Surv(OS, Censor) ~ MGMTp_methylation_status, data = data)
     print(fit) # This will print the test statistic (Chisq) and the p-value.
 
     # For a complete analysis, we should always visualize the comparison as well.
     # We generate the corresponding Kaplan-Meier plot to see the difference.
-    fit_km <- survfit(Surv(OS, Censor) ~ MGMTp_methylation_status, data = data_surv_mgmt)
+    fit_km <- survfit(Surv(OS, Censor) ~ MGMTp_methylation_status, data = data)
+
+    # Use ggsurvplot for a publication-quality KM plot.
+    p_km_mgmt <- ggsurvplot(
+      fit_km,
+      data = data,
+      pval = TRUE,
+      conf.int = TRUE,
+      risk.table = TRUE,
+      legend.title = "MGMT Status",
+      legend.labs = c("Methylated", "Un-methylated"),
+      palette = c("blue", "red"),
+      title = "Survival by MGMT Methylation Status",
+      xlab = "Time (days)"
+    )
+
     ensure_plots_dir()
-    png(file.path("plots", "Lesson5_KM_by_MGMT.png"), width = 1200, height = 900, res = 150)
-    plot(fit_km, xlab = "Time (days)", ylab = "Survival Probability", col = 1:3, lwd = 2,
-         main = "Survival by MGMT Methylation Status")
-    legend("topright", legend = levels(data_surv_mgmt$MGMTp_methylation_status), col = 1:3, lwd = 2)
-    dev.off()
     pdf(file.path("plots", "Lesson5_KM_by_MGMT.pdf"), width = 9, height = 7)
-    plot(fit_km, xlab = "Time (days)", ylab = "Survival Probability", col = 1:3, lwd = 2,
-         main = "Survival by MGMT Methylation Status")
-    legend("topright", legend = levels(data_surv_mgmt$MGMTp_methylation_status), col = 1:3, lwd = 2)
+    print(p_km_mgmt, newpage = FALSE)
     dev.off()
 
   # Fallback to IDH if MGMT is not available in the dataset
-  } else if ("IDH_mutation_status" %in% names(data_surv_idh)) {
-    fit <- survdiff(Surv(OS, Censor) ~ IDH_mutation_status, data = data_surv_idh)
+  } else if ("IDH_mutation_status" %in% names(data)) {
+    fit <- survdiff(Surv(OS, Censor) ~ IDH_mutation_status, data = data)
     print(fit)
-    fit_km <- survfit(Surv(OS, Censor) ~ IDH_mutation_status, data = data_surv_idh)
+    fit_km <- survfit(Surv(OS, Censor) ~ IDH_mutation_status, data = data)
     # (Plotting code is omitted here for brevity but is in the original script)
 
   } else {

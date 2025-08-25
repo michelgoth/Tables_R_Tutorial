@@ -12,36 +12,48 @@
 
 # SECTION 0: SETUP ---------------------------------------------
 source("R/utils.R")
-load_required_packages(c("readxl", "dplyr", "ggplot2", "survival"))
-data <- load_clinical_data("Data/ClinicalData.xlsx")
+load_required_packages(c("readxl", "survival", "dplyr", "ggplot2", "gtsummary", "flextable", "survminer"))
+
+# Load and impute the clinical data
+# NOTE: For Table 1 and missingness, we use the raw_data. For modeling, we use the imputed data.
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
+
 cat("--- LESSON 12: Comprehensive Survival Workflow ---\n")
 
 # ===============================================================
-# SECTION 1: BASELINE CHARACTERISTICS (TABLE 1) -----------------
-# This section generates the descriptive statistics for your cohort,
-# which are typically presented in the first table of a clinical paper.
-# ===============================================================
-cat("\n--- SECTION 1: BASELINE CHARACTERISTICS ---\n")
-summarize_factor <- function(x) {
-  tb <- sort(table(x, useNA = "no"), decreasing = TRUE)
-  as.data.frame(tb)
-}
-cat("Categorical variable counts:\n")
-if ("Gender" %in% names(data)) print(summarize_factor(data$Gender))
-if ("Grade" %in% names(data)) print(summarize_factor(data$Grade))
-# ... (add other key factors as needed) ...
-cat("\nContinuous variable summary (Age):\n")
-if ("Age" %in% names(data)) print(summary(data$Age))
+# SECTION 1: BASELINE CHARACTERISTICS (TABLE 1) ----------------
+# In clinical papers, "Table 1" is the standard table of baseline
+# patient demographics and clinical characteristics.
+message("--- Generating and saving Table 1 ---")
+table1 <- raw_data %>%
+  select(Age, Gender, Grade, PRS_type, IDH_mutation_status, MGMTp_methylation_status, Chemo_status, Radio_status) %>%
+  tbl_summary(
+    by = Grade,
+    label = list(
+      Age ~ "Age (Years)",
+      Gender ~ "Gender",
+      PRS_type ~ "Tumor Type",
+      IDH_mutation_status ~ "IDH Status",
+      MGMTp_methylation_status ~ "MGMT Promoter Status",
+      Chemo_status ~ "Received Chemotherapy",
+      Radio_status ~ "Received Radiotherapy"
+    )
+  ) %>%
+  add_overall() %>%
+  add_p() %>%
+  bold_labels()
+
+# Save the table to a Word document
+save_as_docx(table1, path = "plots/Table1_Baseline_Characteristics.docx")
+message("--- Baseline characteristics table saved to 'plots/Table1_Baseline_Characteristics.docx' ---")
 
 # ===============================================================
 # SECTION 2: MISSINGNESS PROFILE ------------------------------
-# It is critical to assess how much data is missing for each variable.
-# This informs the feasibility of your models and identifies data quality issues.
-# ===============================================================
-cat("\n--- SECTION 2: MISSINGNESS PROFILE ---\n")
+message("--- Generating Missingness Profile ---")
 miss_df <- data.frame(
-  Variable = names(data),
-  Missing = sapply(data, function(x) sum(is.na(x)))
+  Variable = names(raw_data),
+  Missing = sapply(raw_data, function(x) sum(is.na(x)))
 )
 p_miss <- ggplot(miss_df, aes(x = reorder(Variable, Missing), y = Missing)) +
   geom_col(fill = "firebrick", alpha = 0.8) + coord_flip() + theme_minimal() +
@@ -55,6 +67,7 @@ save_plot_both(p_miss, base_filename = "Lesson12_Missingness_Profile")
 # with survival one by one (univariable) and visualizes the results.
 # ===============================================================
 cat("\n--- SECTION 3: UNIVARIABLE COX HAZARD RATIOS ---\n")
+# NOTE: All modeling is performed on the IMPUTED 'data' object.
 if (all(c("OS", "Censor") %in% names(data))) {
   surv_obj <- Surv(time = data$OS, event = data$Censor)
   candidate_vars <- c("Age", "Gender", "Grade", "IDH_mutation_status", "MGMTp_methylation_status", "PRS_type")
@@ -93,13 +106,14 @@ if (all(c("OS", "Censor") %in% names(data))) {
 # ===============================================================
 cat("\n--- SECTION 4: RISK STRATIFICATION FROM MULTIVARIABLE COX ---\n")
 mv_fit <- NULL
+# NOTE: All modeling is performed on the IMPUTED 'data' object.
 if (all(c("OS", "Censor") %in% names(data))) {
   mv_vars <- c("Age", "Grade", "IDH_mutation_status", "MGMTp_methylation_status")
   mv_vars <- intersect(mv_vars, names(data))
   if (length(mv_vars) >= 2) {
-    # Build the model using only complete cases for the selected variables.
+    # Build the model using the complete, imputed dataset.
     fml <- as.formula(paste("Surv(OS, Censor) ~", paste(mv_vars, collapse = " + ")))
-    mv_fit <- tryCatch(coxph(fml, data = data, na.action = na.omit), error = function(e) NULL)
+    mv_fit <- tryCatch(coxph(fml, data = data), error = function(e) NULL)
     if (!is.null(mv_fit)) {
       # 'predict(..., type = "lp")' calculates the linear predictor, a risk score for each patient.
       risk_score <- predict(mv_fit, type = "lp")
@@ -107,7 +121,8 @@ if (all(c("OS", "Censor") %in% names(data))) {
       risk_groups <- cut(risk_score, breaks = quantile(risk_score, probs = c(0, 1/3, 2/3, 1)),
                          labels = c("Low", "Medium", "High"), include.lowest = TRUE)
       # Plot a KM curve to see if our risk groups have different survival outcomes.
-      rg_fit <- survfit(Surv(OS, Censor) ~ risk_groups, data = na.omit(data[, all.vars(fml)]))
+      # We can use the main 'data' object as it is complete.
+      rg_fit <- survfit(Surv(OS, Censor) ~ risk_groups, data = data)
       # Plotting code follows...
     }
   }

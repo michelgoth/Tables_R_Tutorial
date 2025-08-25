@@ -9,9 +9,13 @@
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
+# For this lesson, we will focus on the `survival` and `survminer` packages.
 source("R/utils.R")
-load_required_packages(c("dplyr", "ggplot2", "survival"))
-data <- load_clinical_data("Data/ClinicalData.xlsx")
+load_required_packages(c("readxl", "dplyr", "survival", "survminer"))
+
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
 cat("--- LESSON 15: TMZ × MGMT Interaction ---\n")
 
 # ===============================================================
@@ -27,8 +31,8 @@ df <- data %>%
   dplyr::mutate(
     Chemo_factor = factor(Chemo_status, levels = c(0, 1), labels = c("No TMZ", "TMZ"))
   ) %>%
-  # Filter for complete cases for the key variables.
-  dplyr::filter(!is.na(OS) & !is.na(Censor) & !is.na(Chemo_factor) & !is.na(MGMTp_methylation_status)) %>%
+  # NOTE: The original script filtered for complete cases here. This is
+  # no longer necessary as we are using the full, imputed dataset.
   droplevels()
 
 # ===============================================================
@@ -48,8 +52,23 @@ for (lvl in levels(df$MGMTp_methylation_status)) {
   surv_obj <- Surv(time = df_subset$OS, event = df_subset$Censor)
   fit_km <- survfit(surv_obj ~ Chemo_factor, data = df_subset)
 
-  # Save the plot (code omitted for brevity, but it generates one plot per MGMT level).
-  # ...
+  # Use ggsurvplot for a publication-quality KM plot for the stratum.
+  p_km_stratified <- ggsurvplot(
+    fit_km,
+    data = df_subset,
+    pval = TRUE,
+    conf.int = TRUE,
+    risk.table = TRUE,
+    title = paste("Effect of TMZ in MGMT-", lvl, "Patients"),
+    xlab = "Time (days)",
+    legend.title = "Treatment",
+    palette = c("orange", "purple")
+  )
+
+  # Save the plot for the current stratum.
+  pdf(file.path("plots", paste0("Lesson15_KM_Treatment_by_MGMT_", lvl, ".pdf")), width = 9, height = 7)
+  print(p_km_stratified, newpage = FALSE)
+  dev.off()
 }
 
 # ===============================================================
@@ -59,6 +78,7 @@ for (lvl in levels(df$MGMTp_methylation_status)) {
 # ===============================================================
 # Define other variables to adjust for.
 adj_vars <- intersect(c("Age", "Grade"), names(df))
+# NOTE: The 'df' object is now the full imputed cohort.
 surv_obj_all <- Surv(time = df$OS, event = df$Censor)
 
 # The formula 'Chemo_factor * MGMTp_methylation_status' is key.

@@ -18,13 +18,9 @@ if (!interactive() && is.null(getOption("repos")["CRAN"])) {
 source("R/utils.R")
 load_required_packages(c("readxl", "ggplot2", "dplyr"))
 
-# Load the clinical data from the Excel file.
-data <- load_clinical_data("Data/ClinicalData.xlsx")
-
-# Create clean data frames for each plot, removing rows with missing data
-# for the variables we intend to plot.
-data_grade_prs <- filter_complete_cases(data, c("Grade", "PRS_type"))
-data_idh_gender <- filter_complete_cases(data, c("IDH_mutation_status", "Gender"))
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
 
 # ===============================================================
 # SECTION 1: GROUPED BAR PLOTS FOR CATEGORICAL COMPARISONS ----
@@ -33,8 +29,8 @@ data_idh_gender <- filter_complete_cases(data, c("IDH_mutation_status", "Gender"
 # --- Plot 1: Tumor Grade by Presentation Type (PRS) ---
 # A grouped bar plot helps us see the counts of one variable, broken
 # down by the categories of another variable.
-if (all(c("Grade", "PRS_type") %in% names(data_grade_prs))) {
-  p1 <- ggplot(data_grade_prs, aes(x = Grade, fill = PRS_type)) +
+if (all(c("Grade", "PRS_type") %in% names(data))) {
+  p1 <- ggplot(data, aes(x = Grade, fill = PRS_type)) +
     # 'x = Grade' sets the variable for the x-axis.
     # 'fill = PRS_type' tells ggplot to color the bars based on the PRS_type,
     # and it will automatically create a legend.
@@ -53,8 +49,8 @@ if (all(c("Grade", "PRS_type") %in% names(data_grade_prs))) {
 # --- Plot 2: IDH Mutation Status by Gender ---
 # Here we do the same thing to compare the number of IDH mutant vs.
 # wildtype cases between male and female patients.
-if (all(c("IDH_mutation_status", "Gender") %in% names(data_idh_gender))) {
-  p2 <- ggplot(data_idh_gender, aes(x = IDH_mutation_status, fill = Gender)) +
+if (all(c("IDH_mutation_status", "Gender") %in% names(data))) {
+  p2 <- ggplot(data, aes(x = IDH_mutation_status, fill = Gender)) +
     geom_bar(position = "dodge") +
     labs(title = "IDH Mutation Status by Gender",
          x = "IDH Mutation Status", y = "Number of Patients") +

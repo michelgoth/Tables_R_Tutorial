@@ -4,18 +4,19 @@
 #
 # OBJECTIVE:
 # To perform multivariable survival analysis using the Cox Proportional
-# Hazards model. This allows us to estimate the effect of several clinical
-# variables on survival simultaneously and identify independent predictors of outcome.
+# Hazards model, and to properly check the model's key assumptions. This
+# allows us to estimate the effect of several clinical variables on
+# survival simultaneously and identify independent predictors of outcome.
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
 source("R/utils.R")
-load_required_packages(c("survival", "readxl", "dplyr", "ggplot2"))
+load_required_packages(c("survival", "readxl", "dplyr", "ggplot2", "survminer"))
 
-data <- load_clinical_data("Data/ClinicalData.xlsx")
-
-# Create a clean data frame for the overall KM plot.
-data_surv_all <- filter_complete_cases(data, c("OS", "Censor"))
+# of a patient while adjusting for all other variables in the model.
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
 
 # ===============================================================
 # SECTION 1: BUILDING THE MULTIVARIABLE COX MODEL ---------------
@@ -29,23 +30,72 @@ data_surv_all <- filter_complete_cases(data, c("OS", "Censor"))
 required_cols <- c("OS", "Censor", "Age", "Gender", "Grade",
                    "IDH_mutation_status", "MGMTp_methylation_status", "PRS_type",
                    "Chemo_status", "Radio_status")
+# Note: In this refactored script, 'data' is already imputed, so we don't
+# need special handling for missingness here. The model will run on the full cohort.
 available_cols <- intersect(required_cols, names(data))
+# We must remove the outcome variables from the list of predictors.
+predictor_cols <- setdiff(available_cols, c("OS", "Censor"))
 
 # Fit the Cox model using the 'coxph()' function.
 # The formula includes multiple predictor variables separated by '+'.
-# The model will automatically use only "complete cases" - patients who
-# do not have missing data for ANY of the variables in the formula.
-cox_formula <- as.formula(paste("Surv(OS, Censor) ~", paste(available_cols, collapse=" + ")))
+cox_formula <- as.formula(paste("Surv(OS, Censor) ~", paste(predictor_cols, collapse=" + ")))
 
 tryCatch({
   cox_model <- coxph(cox_formula, data = data)
 
   # The 'summary()' of the model object provides the key results.
   print(summary(cox_model))
+
+  # A value > 1 means worse survival (higher risk).
+  # A value < 1 means better survival (lower risk).
+  summary(cox_model)
+
+  # --- Forest Plot ---
+  # We can use the ggforest function from the survminer package to visualize this.
+  if (!is.null(cox_model)) {
+      p_forest <- ggforest(cox_model, data = data)
+      save_plot_both(p_forest, "Lesson6_Cox_Forest_Plot")
+  }
+
 }, error = function(e) {
   cat("Error fitting Cox model:", e$message, "\n")
   cat("This may be due to missing data or insufficient sample size for the variables included.\n")
 })
+
+# ===============================================================
+# SECTION 2: CHECKING MODEL ASSUMPTIONS -------------------------
+# A key part of robust modeling is to check that the model's
+# assumptions are met. For a Cox model, the two most important are:
+#   1. The Proportional Hazards (PH) assumption.
+#   2. The linearity of the relationship for continuous variables.
+# ===============================================================
+if (exists("cox_model")) {
+  cat("\n--- SECTION 2: CHECKING MODEL ASSUMPTIONS ---\n")
+
+  # --- 2A: Proportional Hazards (PH) Assumption ---
+  # This tests if the effect of each variable is constant over time.
+  # A p-value > 0.05 suggests the assumption is met.
+  cat("\n--- Proportional Hazards Assumption Test (Schoenfeld residuals) ---\n")
+  ph_test <- cox.zph(cox_model)
+  print(ph_test)
+
+  # Visualize the PH test results. We look for flat, horizontal lines.
+  p_ph_test <- ggcoxzph(ph_test)
+  print(p_ph_test[[1]]) # Print the first plot in the list as an example
+  # save_plot_list_both(p_ph_test, base_filename = "Lesson6_PH_Assumption_Checks")
+
+  # --- 2B: Linearity Assumption for Continuous Variables (Age) ---
+  # This tests if the effect of Age is linear. We compare the original
+  # model to one where Age is modeled with a flexible spline.
+  # A p-value > 0.05 in the anova() test suggests the linear model is sufficient.
+  cat("\n--- Linearity Assumption Test for Age ---\n")
+  predictor_cols_no_age <- setdiff(predictor_cols, "Age")
+  fml_spline <- as.formula(paste("Surv(OS, Censor) ~ pspline(Age) +",
+                                 paste(predictor_cols_no_age, collapse=" + ")))
+  model_spline <- coxph(fml_spline, data = data)
+  linearity_test <- anova(cox_model, model_spline)
+  print(linearity_test)
+}
 
 # ===============================================================
 # INTERPRETING THE OUTPUT
@@ -63,7 +113,7 @@ tryCatch({
 
 
 # --- For context, we also plot the overall survival of the cohort ---
-surv_obj <- Surv(data_surv_all$OS, data_surv_all$Censor)
+surv_obj <- Surv(data$OS, data$Censor)
 # A formula of '~ 1' means "no grouping", so it calculates the overall curve.
 km_fit <- survfit(surv_obj ~ 1)
 km_df <- data.frame(time = km_fit$time, surv = km_fit$surv)

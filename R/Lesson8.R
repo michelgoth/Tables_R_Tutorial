@@ -14,18 +14,14 @@ if (!interactive() && is.null(getOption("repos")["CRAN"])) {
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
+# For this lesson, we need ggplot2 for plotting and dplyr for data manipulation.
 source("R/utils.R")
 load_required_packages(c("readxl", "ggplot2", "dplyr"))
 
-data <- load_clinical_data("Data/ClinicalData.xlsx")
-
-# Create clean data frames and drop unused factor levels.
-data_age_idh <- filter_complete_cases(data, c("Age", "IDH_mutation_status"))
-data_age_idh <- droplevels(data_age_idh)
-data_os_mgmt <- filter_complete_cases(data, c("OS", "MGMTp_methylation_status"))
-data_os_mgmt <- droplevels(data_os_mgmt)
-data_age_grade <- filter_complete_cases(data, c("Age", "Grade"))
-data_age_grade <- droplevels(data_age_grade)
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
+data <- droplevels(data)
 
 # ===============================================================
 # SECTION 1: WILCOXON RANK-SUM TEST ---------------------------
@@ -40,19 +36,19 @@ data_age_grade <- droplevels(data_age_grade)
 # ===============================================================
 
 # --- Test 1: Compare Age by IDH mutation status ---
-if (all(c("Age", "IDH_mutation_status") %in% names(data_age_idh))) {
+if (all(c("Age", "IDH_mutation_status") %in% names(data))) {
   # This code checks to make sure there are exactly two groups to compare.
-  if (nlevels(data_age_idh$IDH_mutation_status) == 2) {
+  if (nlevels(data$IDH_mutation_status) == 2) {
     # The formula 'Age ~ IDH_mutation_status' tells R to compare the 'Age'
     # variable between the groups defined in 'IDH_mutation_status'.
-    print(wilcox.test(Age ~ IDH_mutation_status, data = data_age_idh))
+    print(wilcox.test(Age ~ IDH_mutation_status, data = data))
   }
 }
 
 # --- Test 2: Compare Overall Survival by MGMT methylation status ---
-if (all(c("OS", "MGMTp_methylation_status") %in% names(data_os_mgmt))) {
-  if (nlevels(data_os_mgmt$MGMTp_methylation_status) == 2) {
-    print(wilcox.test(OS ~ MGMTp_methylation_status, data = data_os_mgmt))
+if (all(c("OS", "MGMTp_methylation_status") %in% names(data))) {
+  if (nlevels(data$MGMTp_methylation_status) == 2) {
+    print(wilcox.test(OS ~ MGMTp_methylation_status, data = data))
   }
 }
 
@@ -68,16 +64,16 @@ if (all(c("OS", "MGMTp_methylation_status") %in% names(data_os_mgmt))) {
 # - Dots outside the whiskers are potential outliers.
 # ===============================================================
 
-if (all(c("OS", "MGMTp_methylation_status") %in% names(data_os_mgmt))) {
-  p <- ggplot(data_os_mgmt, aes(x = MGMTp_methylation_status, y = OS, fill = MGMTp_methylation_status)) +
+if (all(c("OS", "MGMTp_methylation_status") %in% names(data))) {
+  p <- ggplot(data, aes(x = MGMTp_methylation_status, y = OS, fill = MGMTp_methylation_status)) +
     geom_boxplot() +
     theme_minimal() +
     labs(title = "OS by MGMT Methylation Status", x = "MGMT Status", y = "Overall Survival (days)")
   print(p)
   save_plot_both(p, base_filename = "Lesson8_OS_by_MGMT")
 # Fallback plot in case MGMT data is missing.
-} else if (all(c("Age", "Grade") %in% names(data_age_grade))) {
-  p <- ggplot(data_age_grade, aes(x = Grade, y = Age, fill = Grade)) +
+} else if (all(c("Age", "Grade") %in% names(data))) {
+  p <- ggplot(data, aes(x = Grade, y = Age, fill = Grade)) +
     geom_boxplot() +
     theme_minimal() +
     labs(title = "Age by Tumor Grade", x = "Grade", y = "Age (years)")

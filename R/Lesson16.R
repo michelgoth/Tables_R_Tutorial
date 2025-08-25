@@ -9,9 +9,13 @@
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
+# For this lesson, we will focus on the `survival` and `survminer` packages.
 source("R/utils.R")
-load_required_packages(c("dplyr", "ggplot2", "survival"))
-data <- load_clinical_data("Data/ClinicalData.xlsx")
+load_required_packages(c("readxl", "dplyr", "survival", "survminer"))
+
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
 cat("--- LESSON 16: Radiotherapy Adjusted Analysis ---\n")
 
 # ===============================================================
@@ -24,9 +28,9 @@ if (!all(required_cols %in% names(data))) {
 
 df <- data %>%
   # Create a clearer factor variable for radiotherapy status.
-  dplyr::mutate(Radio_factor = factor(Radio_status, levels = c(0, 1), labels = c("No RT", "RT"))) %>%
-  # Filter for complete cases for the essential survival and treatment variables.
-  dplyr::filter(!is.na(OS) & !is.na(Censor) & !is.na(Radio_factor))
+  dplyr::mutate(Radio_factor = factor(Radio_status, levels = c(0, 1), labels = c("No RT", "RT")))
+  # NOTE: The original script filtered for complete cases here. This is
+  # no longer necessary as we are using the full, imputed dataset.
 
 # ===============================================================
 # SECTION 2: UNAJUSTED (UNIVARIABLE) ANALYSIS -------------------
@@ -34,17 +38,26 @@ df <- data %>%
 # between the two treatment groups with a Kaplan-Meier plot.
 # This can be misleading if the groups are not balanced.
 # ===============================================================
+# NOTE: The 'df' object is now the full imputed cohort.
 surv_obj <- Surv(time = df$OS, event = df$Censor)
 fit_km <- survfit(surv_obj ~ Radio_factor, data = df)
 
-# Generate and save the Kaplan-Meier plot.
+# Generate and save a publication-quality Kaplan-Meier plot.
+p_km_rt <- ggsurvplot(
+  fit_km,
+  data = df,
+  pval = TRUE,
+  conf.int = TRUE,
+  risk.table = TRUE,
+  title = "Unadjusted Survival by Radiotherapy",
+  xlab = "Time (days)",
+  legend.title = "Treatment",
+  palette = c("firebrick", "forestgreen")
+)
 ensure_plots_dir()
-png(file.path("plots", "Lesson16_KM_Radiotherapy.png"), width = 1200, height = 900, res = 150)
-plot(fit_km, col = c("firebrick", "forestgreen"), lwd = 2,
-     xlab = "Time (days)", ylab = "Survival Probability", main = "Unadjusted Survival by Radiotherapy")
-legend("topright", legend = levels(df$Radio_factor), col = c("firebrick", "forestgreen"), lwd = 2)
+pdf(file.path("plots", "Lesson16_KM_Radiotherapy.pdf"), width = 9, height = 7)
+print(p_km_rt, newpage = FALSE)
 dev.off()
-# (PDF plotting code omitted for brevity)
 
 # ===============================================================
 # SECTION 3: ADJUSTED MULTIVARIABLE COX MODEL -------------------
@@ -53,6 +66,7 @@ dev.off()
 # between the treatment groups, like Age, Grade, and molecular status.
 # ===============================================================
 adj_vars <- intersect(c("Age", "Grade", "IDH_mutation_status", "MGMTp_methylation_status"), names(df))
+# NOTE: The 'df' object is now the full imputed cohort.
 cox_formula <- as.formula(paste(
   "Surv(OS, Censor) ~ Radio_factor", # Our variable of interest
   if (length(adj_vars) > 0) paste("+", paste(adj_vars, collapse = " + ")) else "" # Adjusters

@@ -9,12 +9,13 @@
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
+# For this lesson, we will use `car` for Levene's test.
 source("R/utils.R")
-# The 'car' package is needed for Levene's test for assumption checking.
-load_required_packages(c("readxl", "ggplot2", "dplyr", "car"))
+load_required_packages(c("readxl", "dplyr", "ggplot2", "rstatix", "car"))
 
-data <- load_clinical_data("Data/ClinicalData.xlsx")
-data <- droplevels(data) # Clean up factor levels
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
 
 # ===============================================================
 # SECTION 1: ONE-WAY ANOVA -------------------------------------
@@ -26,8 +27,7 @@ data <- droplevels(data) # Clean up factor levels
 # ===============================================================
 cat("--- SECTION 1: ONE-WAY ANOVA (OS by Grade) ---\n")
 if (all(c("OS", "Grade") %in% names(data))) {
-  analysis_data <- data[!is.na(data$OS) & !is.na(data$Grade), ]
-  analysis_data <- droplevels(analysis_data)
+  analysis_data <- data # Use the full imputed dataset
   if (nrow(analysis_data) > 0) {
     # The 'aov()' function performs the ANOVA. The formula is similar to previous lessons.
     anova_result <- aov(OS ~ Grade, data = analysis_data)
@@ -50,8 +50,7 @@ if (all(c("OS", "Grade") %in% names(data))) {
 # ===============================================================
 cat("\n--- SECTION 2: POST-HOC ANALYSIS ---\n")
 if (all(c("OS", "Grade") %in% names(data))) {
-  analysis_data <- data[!is.na(data$OS) & !is.na(data$Grade), ]
-  analysis_data <- droplevels(analysis_data)
+  analysis_data <- data # Use the full imputed dataset
   if (nrow(analysis_data) > 0) {
     anova_model <- aov(OS ~ Grade, data = analysis_data)
     # Tukey's Honest Significant Difference (HSD) is a common post-hoc test.
@@ -68,8 +67,7 @@ if (all(c("OS", "Grade") %in% names(data))) {
 # ===============================================================
 cat("\n--- SECTION 3: TWO-WAY ANOVA (OS by Grade and Gender) ---\n")
 if (all(c("OS", "Grade", "Gender") %in% names(data))) {
-  analysis_data <- data[!is.na(data$OS) & !is.na(data$Grade) & !is.na(data$Gender), ]
-  analysis_data <- droplevels(analysis_data)
+  analysis_data <- data # Use the full imputed dataset
   if (nrow(analysis_data) > 0) {
     # The formula 'OS ~ Grade * Gender' is shorthand for 'OS ~ Grade + Gender + Grade:Gender'.
     # It tests the "main effect" of Grade, the "main effect" of Gender, and the
@@ -87,8 +85,7 @@ if (all(c("OS", "Grade", "Gender") %in% names(data))) {
 # ===============================================================
 cat("\n--- SECTION 4: ANOVA ASSUMPTION CHECKING ---\n")
 if (all(c("OS", "Grade") %in% names(data))) {
-  analysis_data <- data[!is.na(data$OS) & !is.na(data$Grade), ]
-  analysis_data <- droplevels(analysis_data)
+  analysis_data <- data # Use the full imputed dataset
   if (nrow(analysis_data) > 0) {
     # 1. Normality Check: Shapiro-Wilk test on the model residuals.
     # A p-value > 0.05 suggests the residuals are normally distributed (assumption met).
@@ -111,7 +108,7 @@ if (all(c("OS", "Grade") %in% names(data))) {
 cat("\n--- SECTION 5 (Optional): MANOVA (Age and OS by Grade) ---\n")
 if (all(c("Age", "OS", "Grade") %in% names(data))) {
   # Here we test if 'Grade' has a significant effect on 'Age' AND 'OS' simultaneously.
-  analysis_data <- data[complete.cases(data[, c("Age", "OS", "Grade")]), ]
+  analysis_data <- data # Use the full imputed dataset
   manova_result <- manova(cbind(Age, OS) ~ Grade, data = analysis_data)
   print(summary(manova_result))
 }

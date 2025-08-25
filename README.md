@@ -22,18 +22,22 @@ This repository provides a structured, hands-on curriculum for integrated clinic
 ## Key Features
 
 ### Curriculum (Lessons 1–23)
-- **Part 1: Clinical Data Analysis (Lessons 1–19)**
+- **Part 1: Clinical Data Analysis (Lessons 1–18)**
     - Lessons 1–11: Foundational statistics (EDA, survival, regression, group comparisons).
-    - Lessons 12–19: Advanced clinical modeling (risk scores, interactions, validation, diagnostics).
-- **Part 2: Transcriptomic Data Analysis (Lessons 20–23)**
-    - Lesson 20: Exploratory analysis with Principal Component Analysis (PCA).
-    - Lesson 21: Discovery of novel prognostic genes (DE and Survival Analysis).
-    - Lesson 22: Building an integrated clinical-genomic model with Machine Learning (LASSO).
-    - Lesson 23: Uncovering biological pathways with Gene Set Enrichment Analysis (GSEA).
+    - Lessons 12–18: Advanced clinical modeling (risk scores, interactions, validation).
+- **Part 2: Transcriptomic Data Analysis (Lessons 19–23)**
+    - Lesson 19: Exploratory analysis with Principal Component Analysis (PCA).
+    - Lesson 20: Discovery of novel prognostic genes (DE and Survival Analysis).
+    - Lesson 21: Building an integrated clinical-genomic model with Machine Learning (LASSO).
+    - Lesson 22: Uncovering biological pathways with Gene Set Enrichment Analysis (GSEA).
+    - Lesson 23: Discovery of novel predictive biomarkers of treatment response.
 
 ### Visualization
 - Publication-ready plots saved to `plots/` for all analyses.
 - Consistent utilities via `R/utils.R`
+
+### Automation
+- `full_analysis_runner.R`: A script to run all analyses from Lesson 1 to 23 sequentially, ensuring full reproducibility of the results and regeneration of all plots.
 
 ---
 
@@ -51,16 +55,21 @@ This repository provides a structured, hands-on curriculum for integrated clinic
    cd Tables_R_Tutorial
    ```
 
-2. Run the setup script
+2. Run the setup script to install all required packages:
    ```r
    source("R/setup.R")
    ```
 
-3. Run a lesson (plots are saved under `plots/`)
+3. Run a single lesson (e.g., Lesson 1) to generate its specific plots:
    ```r
    source("R/Lesson1.R")
    ```
    We recommend reading the corresponding lesson explanation in [`docs/Lesson01.md`](docs/Lesson01.md) as you run the script.
+
+4. Alternatively, run the entire analysis pipeline to generate all results:
+   ```r
+   source("full_analysis_runner.R")
+   ```
 
 ---
 
@@ -83,11 +92,11 @@ This repository provides a structured, hands-on curriculum for integrated clinic
 - Lesson 16: Radiotherapy adjusted analysis
 - Lesson 17: Parsimonious prognostic score (point-based)
 - Lesson 18: Model validation with train-test split
-- Lesson 19: Advanced model diagnostics (PH and linearity tests)
-- **Lesson 20: PCA of transcriptomic data**
-- **Lesson 21: Volcano plot and KM plot for novel gene**
-- **Lesson 22: Validated survival of integrated model**
-- **Lesson 23: GSEA pathway enrichment plots**
+- **Lesson 19: PCA of transcriptomic data**
+- **Lesson 20: Volcano plot and KM plot for novel gene**
+- **Lesson 21: Validated survival of integrated model**
+- **Lesson 22: GSEA pathway enrichment plots**
+- **Lesson 23: Discovery of novel predictive biomarkers of treatment response**
 
 ---
 
@@ -99,7 +108,8 @@ Tables_R_Tutorial/
 │   ├── setup.R                 # Package installation and verification
 │   ├── utils.R                 # Helper functions
 │   ├── Lesson1.R … Lesson23.R  # All lessons
-│   └── README.md               # Script documentation
+│   ├── README.md               # Script documentation
+│   └── full_analysis_runner.R  # Script to run all lessons
 ├── Data/
 │   ├── ClinicalData.xlsx       # Main clinical dataset
 │   ├── CGGA.mRNAseq_...txt     # RNA-seq expression data
@@ -107,7 +117,6 @@ Tables_R_Tutorial/
 ├── docs/                       # Lesson-specific explanations (1–23)
 │   ├── Lesson01.md … Lesson23.md
 ├── plots/                      # Auto-saved plots from all lessons
-├── progress_tracker.md         # Optional progress notes
 ├── LICENSE
 └── README.md                   # This file
 ```

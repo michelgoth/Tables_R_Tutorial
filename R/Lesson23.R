@@ -1,105 +1,210 @@
-# ===============================================================
-# LESSON 23: UNCOVERING THE UNDERLYING BIOLOGY (GSEA)
-# ===============================================================
-#
-# OBJECTIVE:
-# To move beyond individual genes and discover the biological *pathways*
-# that are systematically altered in high-risk tumors. This lesson
-# uses Gene Set Enrichment Analysis (GSEA) to provide a biological
-# narrative for our prognostic findings.
-# ===============================================================
+#' ---
+#' title: "Lesson 23: Discovering Predictive Biomarkers of Treatment Response"
+#' author: "T.J. Gibson"
+#' date: "11/15/2023"
+#' ---
+#'
+#' ### Introduction to Predictive Biomarkers
+#'
+#' So far, we have focused on **prognostic** biomarkers, which predict a patient's
+#' outcome (e.g., survival time) regardless of what treatment they receive.
+#' Now, we turn to a more clinically actionable question: can we find **predictive**
+#' biomarkers?
+#'
+#' A predictive biomarker identifies which patients are most likely to benefit
+#' from a specific treatment. This is a cornerstone of personalized medicine.
+#'
+#' In our dataset, the main treatment variable is chemotherapy with Temozolomide (TMZ).
+#' We want to find a gene whose expression level predicts whether a patient will
+#' respond well or poorly to TMZ.
+#'
+#' To do this, we look for a statistical **interaction**. We are no longer asking,
+#' "Does this gene's expression relate to survival?" Instead, we ask, "Is the
+#' relationship between this gene's expression and survival *different* for
+#' patients who got TMZ compared to those who didn't?"
+#'
+#' ### Lesson Goals
+#'
+#' 1.  Integrate the clinical and transcriptomic datasets.
+#' 2.  Perform a genome-wide screen for biomarkers that predict response to chemotherapy.
+#' 3.  Identify the top predictive biomarker after correcting for multiple testing.
+#' 4.  Visualize the interaction effect using stratified Kaplan-Meier plots.
+#'
+#' ### Loading Libraries & Data
+#'
+#' First, we load our standard libraries and helper functions.
+source(file.path("R", "utils.R"))
+source(file.path("R", "setup.R"))
+load_required_packages(
+  c("survival", "survminer", "DESeq2", "progress", "dplyr")
+)
 
-# SECTION 0: SETUP ---------------------------------------------
-source("R/utils.R")
-# We add `clusterProfiler`, `msigdbr`, and `enrichplot` for enrichment analysis.
-load_required_packages(c("dplyr", "ggplot2", "readxl", "DESeq2", "clusterProfiler", "msigdbr", "enrichplot"))
-cat("--- LESSON 23: Uncovering Underlying Biology (GSEA) ---\n")
+# Set a seed for reproducibility
+set.seed(123)
 
-# ===============================================================
-# SECTION 1: PREPARE DATA AND GENE LIST FOR GSEA ----------------
-# ===============================================================
-# We first need to re-run the differential expression analysis from
-# Lesson 21 to get a ranked list of all genes.
-# --- Load and Prepare Data ---
-clinical_data <- load_clinical_data("Data/ClinicalData.xlsx")
-rna_data <- data.table::fread("Data/CGGA.mRNAseq_325.RSEM.20200506.txt")
-rna_df <- as.data.frame(rna_data); rownames(rna_df) <- rna_df$Gene_Name; rna_df$Gene_Name <- NULL
-rna_counts <- round(rna_df)
-common_samples <- intersect(clinical_data$CGGA_ID, colnames(rna_counts))
-clinical_data <- clinical_data[clinical_data$CGGA_ID %in% common_samples, ]
-rna_counts <- rna_counts[, common_samples]
-clinical_data <- clinical_data[match(colnames(rna_counts), clinical_data$CGGA_ID), ]
-rownames(clinical_data) <- clinical_data$CGGA_ID
-stopifnot(all(colnames(rna_counts) == rownames(clinical_data)))
+# Load and prepare data
+raw_clinical_data <- load_clinical_data(file.path("Data", "ClinicalData.xlsx"))
+clinical_data <- impute_clinical_data(raw_clinical_data)
+rnaseq_data <- load_rnaseq_data(file.path("Data", "CGGA.mRNAseq_325.RSEM.20200506.txt"))
+combined_data <- integrate_data(clinical_data, rnaseq_data)
 
-# --- Run DESeq2 ---
-cat("--- Re-running differential expression to get ranked gene list... ---\n")
-samples_with_idh <- clinical_data$CGGA_ID[!is.na(clinical_data$IDH_mutation_status)]
-valid_clinical_data <- clinical_data[samples_with_idh, ]
-valid_rna_counts <- rna_counts[, valid_clinical_data$CGGA_ID]
-stopifnot(all(colnames(valid_rna_counts) == valid_clinical_data$CGGA_ID))
-dds <- DESeqDataSetFromMatrix(countData = valid_rna_counts, colData = valid_clinical_data, design = ~ IDH_mutation_status)
-dds <- DESeq(dds)
-res <- results(dds, contrast=c("IDH_mutation_status", "Wildtype", "Mutant"))
-res_df <- as.data.frame(res)
+# Extract imputed clinical data and VST-transformed counts for analysis
+clinical_df <- combined_data$clinical
+vst_counts <- combined_data$vst_counts
 
-# --- Create Ranked Gene List ---
-# GSEA requires a list of all genes, ranked by a metric. We will rank
-# them by the `stat` column from DESeq2 (a measure of effect size and significance).
-# We must also remove genes with NA p-values.
-gene_list <- res_df$stat
-names(gene_list) <- rownames(res_df)
-gene_list <- gene_list[!is.na(gene_list)]
-gene_list <- sort(gene_list, decreasing = TRUE)
-cat("--- Gene list successfully ranked. ---\n")
+# Ensure Chemo_status is a factor for modeling
+clinical_df$Chemo_status <- factor(clinical_df$Chemo_status,
+                                   levels = c(0, 1),
+                                   labels = c("No", "TMZ"))
 
-# ===============================================================
-# SECTION 2: PERFORM GENE SET ENRICHMENT ANALYSIS (GSEA) --------
-# ===============================================================
-cat("--- Performing GSEA on Hallmark gene sets... ---\n")
-# Download the "Hallmark" gene sets from the MSigDB database. This is a
-# well-curated collection of 50 key cancer-related pathways.
-h_gene_sets <- msigdbr(species = "Homo sapiens", category = "H")
-h_gene_sets <- dplyr::select(h_gene_sets, gs_name, gene_symbol)
+message("--- LESSON 23: Discovering Predictive Biomarkers ---")
+message("--- Clinical and RNA-seq data successfully integrated. ---")
 
-# Run GSEA.
-gsea_results <- GSEA(gene_list, TERM2GENE = h_gene_sets)
-gsea_df <- as.data.frame(gsea_results)
+#' =================================================================
+#' SECTION 1: GENOME-WIDE SCREEN FOR INTERACTION EFFECTS
+#' =================================================================
+#'
+#' To find genes that predict response to chemotherapy, we will fit a Cox
+#' Proportional Hazards model for every single gene.
+#'
+#' The crucial part of this model is the interaction term: `Chemo_status * gene`.
+#' This term mathematically tests if the gene's effect on survival depends on
+#' the chemotherapy status.
+#'
+#' We also include `Age` and `Grade` as covariates to adjust for their strong
+#' prognostic effects. This helps ensure that our findings are independent of
+#' these known clinical factors.
+#'
+#' Model for each gene:
+#' `Surv(OS, Censor) ~ Chemo_status * Gene + Age + Grade`
+#'
+message("--- Performing genome-wide screen for predictive biomarkers... (This may take a few minutes) ---")
 
-# Print the top enriched pathways.
-cat("--- Top 5 pathways enriched in IDH-Wildtype (high-risk) tumors: ---\n")
-print(head(gsea_df[gsea_df$NES > 0, ], 5))
-cat("\n--- Top 5 pathways enriched in IDH-Mutant (low-risk) tumors: ---\n")
-print(head(gsea_df[gsea_df$NES < 0, ], 5))
+# Setup progress bar
+pb <- progress_bar$new(
+  format = "[:bar] :percent eta: :eta",
+  total = nrow(vst_counts)
+)
 
-# ===============================================================
-# SECTION 3: VISUALIZE GSEA RESULTS -----------------------------
-# =================================circos
-# A dot plot is a great way to visualize the top enriched pathways.
-# It shows the significance and the number of genes involved.
-p_gsea_dotplot <- dotplot(gsea_results, showCategory = 20) +
-  labs(title = "Top Enriched Hallmark Pathways (GSEA)")
-print(p_gsea_dotplot)
-save_plot_both(p_gsea_dotplot, "Lesson23_GSEA_Dot_Plot")
+# Function to run Cox model and extract interaction p-value
+run_interaction_cox <- function(gene_name, vst_counts, clinical_df) {
+  pb$tick() # Increment progress bar
+  
+  # Combine data for the model
+  model_data <- cbind(clinical_df, Gene = vst_counts[gene_name, ])
+  
+  # Fit the Cox model with the interaction term
+  # Use tryCatch to handle cases where the model fails to converge
+  res <- tryCatch({
+    cox_model <- coxph(
+      Surv(OS, Censor) ~ Chemo_status * Gene + Age + Grade,
+      data = model_data
+    )
+    summary(cox_model)$coefficients["Chemo_statusTMZ:Gene", "Pr(>|z|)"]
+  }, error = function(e) {
+    NA # Return NA if the model fails
+  })
+  
+  return(res)
+}
 
-# An enrichment plot shows how the genes in a specific pathway are
-# distributed in our ranked list.
-p_enrichment_plot <- gseaplot2(gsea_results, geneSetID = 1, # Plot the top pathway
-                               title = gsea_results$Description[1])
-print(p_enrichment_plot)
-save_plot_both(p_enrichment_plot[[1]], "Lesson23_GSEA_Enrichment_Plot_Top_Pathway")
-cat("--- GSEA plots saved to 'plots' directory. ---\n")
+# Run the analysis for all genes
+interaction_p_values <- sapply(
+  rownames(vst_counts),
+  run_interaction_cox,
+  vst_counts = vst_counts,
+  clinical_df = clinical_df
+)
 
-# ===============================================================
-# PRACTICE TASKS ----------------------------------------------
-# ===============================================================
-# 1. Look at the dot plot. What kind of biological processes are
-#    associated with the high-risk (IDH-wildtype) phenotype?
-#
-# 2. MSigDB contains many other gene set collections. Try re-running this
-#    analysis using a different category, like "C2" (curated gene sets)
-#    which includes pathways from KEGG and Reactome.
-#    Hint: `msigdbr(species = "Homo sapiens", category = "C2")`
-#
-# 3. Change the ranking metric. Instead of the `stat` column, try ranking
-#    the genes by `log2FoldChange`. Does this change the results?
+# Create a results data frame
+interaction_results <- data.frame(
+  gene = names(interaction_p_values),
+  p_value = interaction_p_values,
+  row.names = NULL
+)
+
+# Remove genes where the model failed
+interaction_results <- na.omit(interaction_results)
+
+# Adjust for multiple testing using Benjamini-Hochberg (FDR)
+interaction_results$p_adj <- p.adjust(interaction_results$p_value, method = "BH")
+
+# Find the top predictive gene
+top_gene <- interaction_results[which.min(interaction_results$p_adj), "gene"]
+
+message(paste("--- Top predictive biomarker identified (after FDR correction):", top_gene, "---"))
+
+#' =================================================================
+#' SECTION 2: VISUALIZING THE PREDICTIVE EFFECT
+#' =================================================================
+#'
+#' Now we will visualize the effect of our top gene, `r top_gene`.
+#' If it is truly a predictive biomarker, its association with survival should be
+#' strong in one treatment group but weak or non-existent in the other.
+#'
+#' We will create two KM plots:
+#' 1. For patients who did NOT receive chemotherapy.
+#' 2. For patients who received chemotherapy (TMZ).
+#'
+#' For each plot, we will stratify patients into "High" and "Low" expression
+#' groups based on the median expression of the top gene.
+
+# Prepare data for plotting
+plot_data <- as.data.frame(cbind(clinical_df, t(vst_counts[top_gene, , drop = FALSE])))
+
+# Create high/low expression groups based on the median
+median_expr <- median(plot_data[[top_gene]])
+plot_data$Expression_Group <- ifelse(plot_data[[top_gene]] >= median_expr, "High", "Low")
+plot_data$Expression_Group <- factor(plot_data$Expression_Group, levels = c("Low", "High"))
+
+# Create a list to hold the two plots
+km_plots <- list()
+
+# Loop through each chemotherapy status
+for (chemo_group in c("No", "TMZ")) {
+  
+  # Subset the data for the current chemo group
+  subset_data <- filter(plot_data, Chemo_status == chemo_group)
+  
+  # Check if there are at least two expression groups to compare
+  if (length(unique(subset_data$Expression_Group)) < 2) {
+    message(paste("Skipping plot for", chemo_group, "group: only one expression group present."))
+    next # Skip to the next iteration
+  }
+  
+  # Create the survival fit object
+  fit <- survfit(Surv(OS, Censor) ~ Expression_Group, data = subset_data)
+  
+  # Create the KM plot
+  p <- ggsurvplot(
+    fit,
+    data = subset_data,
+    pval = TRUE,
+    conf.int = TRUE,
+    risk.table = TRUE,
+    legend.labs = c("Low Expression", "High Expression"),
+    legend.title = paste("Expression of", top_gene),
+    palette = c("#0073C2FF", "#EFC000FF"),
+    title = paste("Survival in Patients with No Chemotherapy"),
+    subtitle = paste("Stratified by", top_gene, "Expression"),
+    ggtheme = theme_light(),
+    risk.table.y.text.col = TRUE,
+    risk.table.y.text = FALSE
+  )
+  
+  # Modify the title for the TMZ group
+  if (chemo_group == "TMZ") {
+    p$plot <- p$plot + labs(title = "Survival in Patients Treated with Chemotherapy (TMZ)")
+  }
+  
+  km_plots[[chemo_group]] <- p
+}
+
+# Arrange and save the plots to a single file
+# Note: If both groups were skipped, this will save an empty plot.
+if (length(km_plots) > 0) {
+  final_plot <- arrange_ggsurvplots(km_plots, print = FALSE, ncol = length(km_plots), nrow = 1)
+  save_plot_both("Lesson23_Predictive_Biomarker_Analysis.pdf", final_plot, width = 18, height = 9)
+}
+
+message("--- Predictive biomarker analysis complete. Plots saved to 'plots' directory. ---")

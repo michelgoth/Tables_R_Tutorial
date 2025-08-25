@@ -9,9 +9,14 @@
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
+# For this lesson, we will use the `rpart` and `rpart.plot` packages.
 source("R/utils.R")
-load_required_packages(c("dplyr", "ggplot2", "survival"))
-data <- load_clinical_data("Data/ClinicalData.xlsx")
+load_required_packages(c("readxl", "dplyr", "survival", "survminer", "rpart", "rpart.plot"))
+
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
+
 cat("--- LESSON 14: IDH × MGMT Joint Risk Groups ---\n")
 
 # ===============================================================
@@ -25,15 +30,15 @@ if (!all(required_cols %in% names(data))) {
 }
 
 # The 'dplyr' pipe (%>%) is used to chain commands together.
+# NOTE: The original script filtered for complete cases here. This is
+# no longer needed as we are using the full, imputed dataset.
 df <- data %>%
-  # 1. Filter for complete cases for the variables of interest.
-  dplyr::filter(!is.na(IDH_mutation_status) & !is.na(MGMTp_methylation_status) & !is.na(OS) & !is.na(Censor)) %>%
-  # 2. Use 'mutate' to create the new 'JointGroup' variable.
+  # 1. Use 'mutate' to create the new 'JointGroup' variable.
   #    'paste0' combines the text from the IDH and MGMT columns.
   dplyr::mutate(
     JointGroup = factor(paste0("IDH-", IDH_mutation_status, ", MGMT-", MGMTp_methylation_status))
   ) %>%
-  # 3. Drop any unused factor levels from the original data.
+  # 2. Drop any unused factor levels from the original data.
   droplevels()
 
 cat("Counts for the new Joint Molecular Groups:\n")
@@ -47,14 +52,23 @@ print(table(df$JointGroup))
 surv_obj <- Surv(time = df$OS, event = df$Censor)
 fit_km <- survfit(surv_obj ~ JointGroup, data = df)
 
-# Plotting the four survival curves.
+# Plotting the four survival curves using ggsurvplot.
+p_km_joint <- ggsurvplot(
+  fit_km,
+  data = df,
+  pval = TRUE,
+  conf.int = TRUE,
+  risk.table = TRUE,
+  legend.title = "IDH-MGMT Group",
+  palette = "jco", # Use a colorblind-friendly palette
+  title = "Survival by IDH-MGMT Joint Group",
+  xlab = "Time (days)"
+)
+
 ensure_plots_dir()
-png(file.path("plots", "Lesson14_KM_by_IDH_MGMT.png"), width = 1400, height = 1000, res = 150)
-plot(fit_km, col = rainbow(nlevels(df$JointGroup)), lwd = 2,
-     xlab = "Time (days)", ylab = "Survival Probability", main = "Survival by IDH-MGMT Joint Group")
-legend("topright", legend = levels(df$JointGroup), col = rainbow(nlevels(df$JointGroup)), lwd = 2)
+pdf(file.path("plots", "Lesson14_KM_by_IDH_MGMT.pdf"), width = 10, height = 8)
+print(p_km_joint, newpage = FALSE)
 dev.off()
-# (PDF plotting code omitted for brevity)
 
 # ===============================================================
 # SECTION 3: ADJUSTED COX MODEL WITH THE JOINT GROUP ------------
@@ -63,6 +77,7 @@ dev.off()
 # ===============================================================
 # Define other variables to adjust for.
 adj_vars <- intersect(c("Age", "Grade"), names(df))
+# NOTE: The 'df' object is now the full imputed cohort.
 cox_formula <- as.formula(paste("Surv(OS, Censor) ~ JointGroup",
                                 if (length(adj_vars) > 0) paste("+", paste(adj_vars, collapse = " + ")) else ""))
 

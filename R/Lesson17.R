@@ -9,13 +9,18 @@
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
+# For this lesson, we will use the `ggeffects` package to help visualize model predictions.
 source("R/utils.R")
-load_required_packages(c("dplyr", "ggplot2", "survival"))
-data <- load_clinical_data("Data/ClinicalData.xlsx")
+load_required_packages(c("readxl", "dplyr", "survival", "survminer", "ggplot2", "ggeffects"))
+
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
 cat("--- LESSON 17: Parsimonious Prognostic Score ---\n")
 
 # ===============================================================
-# SECTION 1: BUILD THE BASE PROGNOSTIC MODEL --------------------
+# SECTION 1: BUILDING A PARSIMONIOUS COX MODEL ------------------
+# "Parsimonious" means simpler. While our full model in Lesson 6
 # The first step is to build a multivariable Cox model using the
 # key prognostic variables we want to include in our score.
 # ===============================================================
@@ -24,8 +29,8 @@ if (length(predictors) < 2) {
   stop("Not enough predictors available for the model.")
 }
 
-# Use only complete cases for the model.
-df <- data[complete.cases(data[, c("OS", "Censor", predictors)]), ]
+# NOTE: The model is now built on the full, imputed dataset.
+df <- data
 surv_obj <- Surv(time = df$OS, event = df$Censor)
 fml <- as.formula(paste("surv_obj ~", paste(predictors, collapse = " + ")))
 
@@ -75,14 +80,23 @@ df$RiskStratum <- cut(df$Score,
 # ===============================================================
 fit_km <- survfit(Surv(OS, Censor) ~ RiskStratum, data = df)
 
-# Generate and save the KM plot.
+# Generate and save a publication-quality KM plot.
+p_km_score <- ggsurvplot(
+  fit_km,
+  data = df,
+  pval = TRUE,
+  conf.int = TRUE,
+  risk.table = TRUE,
+  title = "Survival by Prognostic Score Risk Group",
+  xlab = "Time (days)",
+  legend.title = "Risk Group",
+  palette = c("forestgreen", "goldenrod", "firebrick")
+)
+
 ensure_plots_dir()
-png(file.path("plots", "Lesson17_Score_KM_by_Tertile.png"), width = 1200, height = 900, res = 150)
-plot(fit_km, col = c("forestgreen", "goldenrod", "firebrick"), lwd = 2,
-     xlab = "Time (days)", ylab = "Survival Probability", main = "Survival by Prognostic Score Risk Group")
-legend("topright", legend = levels(df$RiskStratum), col = c("forestgreen", "goldenrod", "firebrick"), lwd = 2)
+pdf(file.path("plots", "Lesson17_Score_KM_by_Tertile.pdf"), width = 9, height = 7)
+print(p_km_score, newpage = FALSE)
 dev.off()
-# (PDF plotting code omitted for brevity)
 
 # Also, visualize the scorecard itself.
 p_tbl <- ggplot(point_map, aes(x = reorder(Term, Points), y = Points)) +

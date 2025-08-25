@@ -10,23 +10,27 @@
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
+# For this lesson, we will use the `caret` package for data splitting.
 source("R/utils.R")
-load_required_packages(c("dplyr", "ggplot2", "survival"))
-data <- load_clinical_data("Data/ClinicalData.xlsx")
+load_required_packages(c("readxl", "dplyr", "survival", "survminer", "caret"))
+
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
+
 cat("--- LESSON 18: Model Validation with Train-Test Split ---\n")
 
 # ===============================================================
-# SECTION 1: PREPARE DATA AND CREATE THE SPLIT ------------------
-# We will use the same predictors as our scorecard in Lesson 17,
-# and we must start by using only the complete cases for this model.
+# SECTION 1: SPLITTING DATA INTO TRAINING AND TESTING SETS ----
+# To get an honest assessment of model performance, we must
 # ===============================================================
 predictors <- intersect(c("Age", "Grade", "IDH_mutation_status", "MGMTp_methylation_status"), names(data))
 if (length(predictors) < 2) {
   stop("Not enough predictors available for the model.")
 }
 
-# Create a clean data frame with no missing values for our key variables.
-df_complete <- data[complete.cases(data[, c("OS", "Censor", predictors)]), ]
+# The full, imputed dataset is used for the split.
+df_complete <- data
 
 # --- The 70/30 Split ---
 # We set a "seed" to make sure the random split is the same every
@@ -87,20 +91,21 @@ print(table(test_data$RiskStratum))
 # ===============================================================
 fit_km_test <- survfit(Surv(OS, Censor) ~ RiskStratum, data = test_data)
 
-# Generate and save the validated KM plot.
+# Generate and save a publication-quality KM plot for the test set.
+p_km_test <- ggsurvplot(
+  fit_km_test,
+  data = test_data,
+  pval = TRUE,
+  conf.int = TRUE,
+  risk.table = TRUE,
+  title = "Validated Survival by Risk Group (Test Set)",
+  xlab = "Time (days)",
+  legend.title = "Risk Group",
+  palette = c("forestgreen", "goldenrod", "firebrick")
+)
 ensure_plots_dir()
-png(file.path("plots", "Lesson18_KM_by_Risk_Test_Set.png"), width = 1200, height = 900, res = 150)
-plot(fit_km_test, col = c("forestgreen", "goldenrod", "firebrick"), lwd = 2,
-     xlab = "Time (days)", ylab = "Survival Probability",
-     main = "Validated Survival by Risk Group (Test Set)")
-legend("topright", legend = levels(test_data$RiskStratum), col = c("forestgreen", "goldenrod", "firebrick"), lwd = 2)
-dev.off()
-
 pdf(file.path("plots", "Lesson18_KM_by_Risk_Test_Set.pdf"), width = 9, height = 7)
-plot(fit_km_test, col = c("forestgreen", "goldenrod", "firebrick"), lwd = 2,
-     xlab = "Time (days)", ylab = "Survival Probability",
-     main = "Validated Survival by Risk Group (Test Set)")
-legend("topright", legend = levels(test_data$RiskStratum), col = c("forestgreen", "goldenrod", "firebrick"), lwd = 2)
+print(p_km_test, newpage = FALSE)
 dev.off()
 
 cat("\n--- Generated plot 'Lesson18_KM_by_Risk_Test_Set.pdf/.png' ---\n")

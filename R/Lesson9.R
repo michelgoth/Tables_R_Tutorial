@@ -14,19 +14,17 @@ if (!interactive() && is.null(getOption("repos")["CRAN"])) {
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
+# Load the necessary packages. `broom` helps tidy up model outputs.
 source("R/utils.R")
-load_required_packages(c("readxl", "ggplot2"))
+load_required_packages(c("readxl", "dplyr", "broom", "ggplot2"))
 
-data <- load_clinical_data("Data/ClinicalData.xlsx")
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
 
 # ===============================================================
-# SECTION 1: FITTING A LOGISTIC REGRESSION MODEL ----------------
-#
-# When our outcome variable is binary (two categories), we can't use
-# standard linear regression. Logistic regression is the correct tool.
-# It models the probability of the outcome occurring.
-#
-# The output is often interpreted as Odds Ratios (OR).
+# SECTION 1: DATA PREPARATION FOR LOGISTIC REGRESSION ---------
+# Logistic regression requires a binary (two-level) outcome variable.
 # ===============================================================
 
 # Define the outcome and predictor variables for our model.
@@ -41,9 +39,9 @@ if (!all(model_variables %in% names(data))) {
 
 tryCatch({
   # --- Data Preparation ---
-  # 1. Filter out rows where the outcome is missing.
-  # 2. Ensure the outcome is a factor with exactly two levels.
-  clean_data <- data[!is.na(data[[outcome_variable]]), ]
+  # In the imputed dataset, the outcome should have no missing values.
+  # We still ensure the outcome is a factor with exactly two levels.
+  clean_data <- data
   clean_data[[outcome_variable]] <- droplevels(factor(clean_data[[outcome_variable]]))
 
   if (nlevels(clean_data[[outcome_variable]]) == 2) {

@@ -14,18 +14,14 @@ if (!interactive() && is.null(getOption("repos")["CRAN"])) {
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
+# Load our helper functions and required packages
 source("R/utils.R")
 load_required_packages(c("readxl", "ggplot2"))
 
-data <- load_clinical_data("Data/ClinicalData.xlsx")
-
-# Create clean data frames. The 'droplevels()' function is used here to
-# remove any unused categories (levels) from our factor variables, which
-# can sometimes cause issues in statistical tests.
-data_idh_grade <- filter_complete_cases(data, c("IDH_mutation_status", "Grade"))
-data_idh_grade <- droplevels(data_idh_grade)
-data_gender_mgmt <- filter_complete_cases(data, c("Gender", "MGMTp_methylation_status"))
-data_gender_mgmt <- droplevels(data_gender_mgmt)
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
+data <- droplevels(data)
 
 # ===============================================================
 # SECTION 1: CHI-SQUARED TEST ----------------------------------
@@ -36,16 +32,16 @@ data_gender_mgmt <- droplevels(data_gender_mgmt)
 # Alternative Hypothesis (Ha): The two variables are not independent.
 # ===============================================================
 
-if (all(c("IDH_mutation_status", "Grade") %in% names(data_idh_grade))) {
+if (all(c("IDH_mutation_status", "Grade") %in% names(data))) {
   # First, we create a "contingency table" which is a table of counts
   # showing the number of patients for each combination of the two variables.
-  table_idh_grade <- table(data_idh_grade$IDH_mutation_status, data_idh_grade$Grade)
+  table_idh_grade <- table(data$IDH_mutation_status, data$Grade)
 
   # Run the test on the contingency table and print the results (p-value).
   print(chisq.test(table_idh_grade))
 
   # It's always a good idea to visualize the association you are testing.
-  p <- ggplot(data_idh_grade, aes(x = Grade, fill = IDH_mutation_status)) +
+  p <- ggplot(data, aes(x = Grade, fill = IDH_mutation_status)) +
     geom_bar(position = "dodge") +
     labs(title = "IDH Status by Tumor Grade", x = "Grade", y = "Count") +
     theme_minimal()
@@ -64,9 +60,9 @@ if (all(c("IDH_mutation_status", "Grade") %in% names(data_idh_grade))) {
 # has an expected count of less than 5.
 # ===============================================================
 
-if (all(c("Gender", "MGMTp_methylation_status") %in% names(data_gender_mgmt))) {
+if (all(c("Gender", "MGMTp_methylation_status") %in% names(data))) {
   # We can create the table and run the test in one line.
-  print(fisher.test(table(data_gender_mgmt$Gender, data_gender_mgmt$MGMTp_methylation_status)))
+  print(fisher.test(table(data$Gender, data$MGMTp_methylation_status)))
 }
 
 # ===============================================================

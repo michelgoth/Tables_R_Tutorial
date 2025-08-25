@@ -17,14 +17,11 @@ if (!interactive() && is.null(getOption("repos")["CRAN"])) {
 # SECTION 0: SETUP ---------------------------------------------
 # As before, we load our helper functions and the packages needed for this lesson.
 source("R/utils.R")
-load_required_packages(c("readxl", "ggplot2", "dplyr"))
+load_required_packages(c("readxl", "ggplot2", "dplyr", "rstatix"))
 
-# Load the clinical data from the Excel file into a data frame.
-data <- load_clinical_data("Data/ClinicalData.xlsx")
-
-# Create a clean data frame specifically for the age-by-gender plot,
-# removing any rows where either 'Age' or 'Gender' is missing.
-data_age_gender <- filter_complete_cases(data, c("Age", "Gender"))
+# Load and impute the clinical data
+raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
+data <- impute_clinical_data(raw_data)
 
 # ===============================================================
 # SECTION 1: DESCRIPTIVE STATISTICS ---------------------------
@@ -55,8 +52,8 @@ if ("IDH_mutation_status" %in% names(data)) print(table(data$IDH_mutation_status
 # distribution of a continuous variable between two or more groups.
 # ===============================================================
 
-if (all(c("Age", "Gender") %in% names(data_age_gender))) {
-  p <- ggplot(data_age_gender, aes(x = Age, fill = Gender)) +
+if (all(c("Age", "Gender") %in% names(data))) {
+  p <- ggplot(data, aes(x = Age, fill = Gender)) +
     # 'geom_histogram' creates the histogram.
     # 'alpha = 0.6' makes the bars semi-transparent so you can see both distributions.
     # 'position = "identity"' tells ggplot to overlay the histograms directly,
