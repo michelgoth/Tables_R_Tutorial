@@ -21,11 +21,11 @@ This repository provides a structured, hands-on curriculum for clinical data ana
 
 ## Key Features
 
-### Curriculum (Lessons 1–17)
+### Curriculum (Lessons 1–18)
 - Lessons 1–3: Import, descriptive statistics, categorical visualization
 - Lessons 4–6: Kaplan–Meier, log-rank test, multivariable Cox
 - Lessons 7–11: Association tests, group comparisons, logistic regression, correlation, ANOVA/MANOVA
-- Lessons 12–17: Clinician extensions (baseline/missingness/PH checks), ML basics, IDH×MGMT joint groups, TMZ×MGMT interaction, radiotherapy adjusted analysis, parsimonious risk score
+- Lessons 12–18: Clinician extensions (baseline/missingness/PH checks), ML basics, IDH×MGMT joint groups, TMZ×MGMT interaction, radiotherapy adjusted analysis, parsimonious risk score, and **model validation**
 
 ### Visualization
 - Publication-ready plots saved to `plots/` (PDF and PNG)
@@ -78,6 +78,7 @@ This repository provides a structured, hands-on curriculum for clinical data ana
 - Lesson 15: Temozolomide benefit and MGMT interaction
 - Lesson 16: Radiotherapy adjusted analysis
 - Lesson 17: Parsimonious prognostic score (point-based)
+- Lesson 18: **Model validation with train-test split**
 
 ---
 
@@ -88,13 +89,13 @@ Tables_R_Tutorial/
 ├── R/                          # R scripts
 │   ├── setup.R                 # Package installation and verification
 │   ├── utils.R                 # Data loading, NA handling, plot saving
-│   ├── Lesson1.R … Lesson17.R  # Lessons aligned to the provided dataset
+│   ├── Lesson1.R … Lesson18.R  # Lessons aligned to the provided dataset
 │   └── README.md               # Script documentation
 ├── Data/
 │   ├── ClinicalData.xlsx       # Main dataset (325 patients)
 │   └── README.md               # Data documentation
-├── docs/                       # Lesson-specific explanations (1–17)
-│   ├── Lesson01.md … Lesson17.md
+├── docs/                       # Lesson-specific explanations (1–18)
+│   ├── Lesson01.md … Lesson18.md
 ├── plots/                      # Auto-saved plots from all lessons
 ├── progress_tracker.md         # Optional progress notes
 ├── LICENSE
