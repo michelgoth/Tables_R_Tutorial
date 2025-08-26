@@ -102,5 +102,6 @@ source("R/setup.R")
 source("R/Lesson14.R") # e.g., for the IDH x MGMT plot
 
 # 3. Render this report
-rmarkdown::render("docs/report.Rmd")
+# This is now a static markdown file. To re-generate from Rmd,
+# a separate Rmd source file would be needed.
 ```
