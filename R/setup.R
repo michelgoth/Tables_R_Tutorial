@@ -28,7 +28,7 @@ if (!interactive()) {
 
 # Declare Bioconductor package list (empty by default)
 bioc_packages <- c(
-  "DESeq2", "clusterProfiler", "enrichplot"
+  "DESeq2", "clusterProfiler", "enrichplot", "ConsensusClusterPlus"
 )
 
 cat("Setting up Clinical Data Analysis Environment...\n\n")
