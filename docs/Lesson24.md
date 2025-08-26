@@ -36,14 +36,16 @@ This multi-layered approach bridges our findings with established TCGA literatur
 - **Volcano plots**: Differential expression for each subtype (4 plots)
 - **GSEA dot plots**: Top enriched pathways for each subtype
 - **GSEA enrichment plots**: Detailed pathway analysis for top findings
+- **Comparative GSEA heatmaps**: Cross-subtype pathway enrichment comparison
 
 ## Expected Results
 This comprehensive analysis will:
 1. **Identify 4 molecular subtypes** with distinct expression signatures
 2. **Reveal unique gene signatures** for each subtype through differential expression
 3. **Uncover biological pathways** that drive each subtype's phenotype
-4. **Demonstrate clinical relevance** through survival differences
-5. **Generate 10+ publication-ready plots** covering all analysis aspects
+4. **Compare pathway enrichment patterns** across subtypes in heatmap format
+5. **Demonstrate clinical relevance** through survival differences
+6. **Generate 12+ publication-ready plots** covering all analysis aspects
 
 ## Key Innovations
 - **Multi-scale analysis**: From clustering to pathways in one integrated workflow

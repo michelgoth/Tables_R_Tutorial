@@ -475,7 +475,146 @@ for (subtype in names(gsea_results_list)) {
 }
 
 # ===============================================================
-# SECTION 10: SUMMARY OF DIFFERENTIAL EXPRESSION AND GSEA -----
+# SECTION 10: COMPARATIVE GSEA HEATMAP ACROSS SUBTYPES --------
+# ===============================================================
+cat("--- Creating comparative GSEA heatmap across subtypes... ---\n")
+
+# Function to extract top pathways from each subtype for comparative analysis
+create_comparative_gsea_heatmap <- function(gsea_results_list) {
+  # Collect all significant pathways from all subtypes
+  all_pathways <- list()
+  
+  for (subtype in names(gsea_results_list)) {
+    gsea_result <- gsea_results_list[[subtype]]
+    if (!is.null(gsea_result) && nrow(gsea_result) > 0) {
+      # Get top 20 pathways for this subtype
+      top_pathways <- gsea_result@result[1:min(20, nrow(gsea_result)), ]
+      all_pathways[[subtype]] <- data.frame(
+        pathway = top_pathways$Description,
+        NES = top_pathways$NES,  # Normalized Enrichment Score
+        padj = top_pathways$p.adjust,
+        subtype = subtype,
+        stringsAsFactors = FALSE
+      )
+    }
+  }
+  
+  if (length(all_pathways) == 0) {
+    cat("No GSEA results available for comparative heatmap\n")
+    return(NULL)
+  }
+  
+  # Combine all pathway results
+  combined_pathways <- do.call(rbind, all_pathways)
+  
+  # Select top pathways that appear across multiple subtypes or are highly significant
+  pathway_summary <- combined_pathways %>%
+    group_by(pathway) %>%
+    summarise(
+      n_subtypes = n(),
+      max_abs_NES = max(abs(NES), na.rm = TRUE),
+      min_padj = min(padj, na.rm = TRUE)
+    ) %>%
+    arrange(desc(max_abs_NES)) %>%
+    head(30)  # Top 30 pathways for visualization
+  
+  # Create matrix for heatmap
+  selected_pathways <- pathway_summary$pathway
+  heatmap_data <- matrix(0, nrow = length(selected_pathways), 
+                        ncol = length(names(gsea_results_list)))
+  rownames(heatmap_data) <- selected_pathways
+  colnames(heatmap_data) <- names(gsea_results_list)
+  
+  # Fill the matrix with NES values
+  for (subtype in names(gsea_results_list)) {
+    subtype_data <- combined_pathways[combined_pathways$subtype == subtype, ]
+    for (pathway in selected_pathways) {
+      pathway_match <- subtype_data[subtype_data$pathway == pathway, ]
+      if (nrow(pathway_match) > 0) {
+        heatmap_data[pathway, subtype] <- pathway_match$NES[1]
+      }
+    }
+  }
+  
+  # Shorten pathway names for better visualization
+  rownames(heatmap_data) <- substr(rownames(heatmap_data), 1, 60)
+  
+  return(heatmap_data)
+}
+
+# Create the comparative heatmap
+comparative_matrix <- create_comparative_gsea_heatmap(gsea_results_list)
+
+if (!is.null(comparative_matrix)) {
+  # Create annotation for subtypes
+  subtype_annotation <- data.frame(
+    Subtype = factor(colnames(comparative_matrix))
+  )
+  rownames(subtype_annotation) <- colnames(comparative_matrix)
+  
+  # Define colors for the heatmap (blue = negative enrichment, red = positive enrichment)
+  # Define annotation colors
+  annotation_colors_gsea <- list(
+    Subtype = c("Classical" = "red", "Mesenchymal" = "blue", "Proneural" = "green", "Neural" = "purple")
+  )
+  
+  # Generate comparative GSEA heatmap
+  pdf("plots/Lesson24_Comparative_GSEA_Heatmap.pdf", width = 12, height = 16)
+  pheatmap(
+    comparative_matrix,
+    annotation_col = subtype_annotation,
+    annotation_colors = annotation_colors_gsea,
+    show_colnames = TRUE,
+    show_rownames = TRUE,
+    cluster_cols = TRUE,
+    cluster_rows = TRUE,
+    scale = "none",  # Don't scale since NES values are already normalized
+    color = colorRampPalette(c("blue", "white", "red"))(100),
+    breaks = seq(-3, 3, length.out = 101),  # Center at 0 for NES values
+    main = "Comparative GSEA: Pathway Enrichment Across Molecular Subtypes",
+    fontsize_row = 8,
+    fontsize_col = 10,
+    cellwidth = 25,
+    cellheight = 8
+  )
+  dev.off()
+  
+  cat("Generated comparative GSEA heatmap\n")
+  
+  # Also create a simplified version with only the most distinctive pathways
+  # Select pathways with high variance across subtypes
+  pathway_variance <- apply(comparative_matrix, 1, var, na.rm = TRUE)
+  top_variable_pathways <- names(sort(pathway_variance, decreasing = TRUE)[1:20])
+  
+  simplified_matrix <- comparative_matrix[top_variable_pathways, ]
+  
+  pdf("plots/Lesson24_Comparative_GSEA_Heatmap_Top20.pdf", width = 10, height = 12)
+  pheatmap(
+    simplified_matrix,
+    annotation_col = subtype_annotation,
+    annotation_colors = annotation_colors_gsea,
+    show_colnames = TRUE,
+    show_rownames = TRUE,
+    cluster_cols = TRUE,
+    cluster_rows = TRUE,
+    scale = "none",
+    color = colorRampPalette(c("blue", "white", "red"))(100),
+    breaks = seq(-3, 3, length.out = 101),
+    main = "Top 20 Most Variable Pathways Across Subtypes",
+    fontsize_row = 9,
+    fontsize_col = 11,
+    cellwidth = 30,
+    cellheight = 12
+  )
+  dev.off()
+  
+  cat("Generated simplified comparative GSEA heatmap (top 20 pathways)\n")
+} else {
+  cat("Could not generate comparative GSEA heatmap\n")
+}
+
+# ===============================================================
+# SECTION 11: SUMMARY OF DIFFERENTIAL EXPRESSION AND GSEA -----
 # ===============================================================
 cat("\n=== DIFFERENTIAL EXPRESSION AND GSEA SUMMARY ===\n")
 
@@ -520,6 +659,12 @@ for (subtype in names(gsea_results_list)) {
     cat("- plots/", filename1, ".pdf\n", sep = "")
     cat("- plots/", filename2, ".pdf\n", sep = "")
   }
+}
+
+# List comparative GSEA heatmaps
+if (!is.null(comparative_matrix)) {
+  cat("- plots/Lesson24_Comparative_GSEA_Heatmap.pdf\n")
+  cat("- plots/Lesson24_Comparative_GSEA_Heatmap_Top20.pdf\n")
 }
 
 # End of Lesson 24
