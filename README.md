@@ -31,7 +31,6 @@ This repository provides a structured, hands-on curriculum for integrated clinic
     - Lesson 21: Building an integrated clinical-genomic model with Machine Learning (LASSO).
     - Lesson 22: Uncovering biological pathways with Gene Set Enrichment Analysis (GSEA).
     - Lesson 23: Discovery of novel predictive biomarkers of treatment response.
-    - Lesson 24: Rigorous external validation of the prognostic model on the TCGA dataset.
 
 ### Visualization
 - Publication-ready plots saved to `plots/` for all analyses.
@@ -74,30 +73,6 @@ This repository provides a structured, hands-on curriculum for integrated clinic
 
 ---
 
-## Running the Analysis with Docker (Recommended)
-
-To ensure maximum reproducibility and avoid system-specific issues with package installation, you can run the entire analysis pipeline using Docker.
-
-### Prerequisites
-- [Docker](https://docs.docker.com/get-docker/) installed on your system.
-
-### Steps
-
-1.  **Build the Docker image:**
-    Open a terminal in the project root directory and run:
-    ```bash
-    docker-compose build
-    ```
-
-2.  **Run the analysis:**
-    This command will run the entire analysis inside the container. The `plots` and `Data` directories are mounted as volumes, so any plots generated or data downloaded inside the container will be available on your local machine.
-    ```bash
-    docker-compose run --rm analysis
-    ```
-    After the run completes, you will find all the generated plots in the `plots/` directory.
-
----
-
 ## Learning Path (Clinical and Dataset-Focused)
 - Lesson 1: Setup, data import, first clinical plots
 - Lesson 2: Descriptive statistics and distributions
@@ -122,7 +97,6 @@ To ensure maximum reproducibility and avoid system-specific issues with package 
 - **Lesson 21: Validated survival of integrated model**
 - **Lesson 22: GSEA pathway enrichment plots**
 - **Lesson 23: Discovery of novel predictive biomarkers of treatment response**
-- **Lesson 24: Validated Kaplan-Meier survival plot on the TCGA cohort**
 
 ---
 
@@ -139,8 +113,7 @@ Tables_R_Tutorial/
 ├── Data/
 │   ├── ClinicalData.xlsx       # Main clinical dataset
 │   ├── CGGA.mRNAseq_...txt     # RNA-seq expression data
-│   ├── README.md               # Data documentation
-│   └── Lesson21_Final_Model.RData # Saved model objects for validation
+│   └── README.md               # Data documentation
 ├── docs/                       # Lesson-specific explanations (1–23)
 │   ├── Lesson01.md … Lesson23.md
 ├── plots/                      # Auto-saved plots from all lessons
