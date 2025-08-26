@@ -58,7 +58,9 @@ core_packages <- c(
   "ggplot2",     # Advanced plotting
   "dplyr",       # Data manipulation
   "tidyr",       # Data tidying
-  "stringr"      # String manipulation
+  "stringr",     # String manipulation
+  "rmarkdown",   # Reporting (HTML/PDF)
+  "knitr"        # R Markdown knitting
 )
 
 # Statistical analysis packages
