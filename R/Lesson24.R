@@ -187,13 +187,21 @@ print(table(aligned_clinical$Subtype))
 cat("--- Generating visualizations... ---\n")
 
 # Create heatmap with annotated subtypes
+# We need to ensure the annotation aligns with the clustering matrix column names
+# The clustering matrix uses the original CGGA IDs, so we'll create the annotation based on those
+
+# Create a mapping from CGGA IDs to subtypes
+cgga_to_subtype <- aligned_clinical$Subtype
+names(cgga_to_subtype) <- names(cluster_assignments)
+
+# Create annotation dataframe that matches the clustering matrix columns
 annotation_col <- data.frame(
-  Subtype = factor(aligned_clinical$Subtype)
+  Subtype = factor(cgga_to_subtype[colnames(clustering_matrix)])
 )
-rownames(annotation_col) <- rownames(aligned_clinical)
+rownames(annotation_col) <- colnames(clustering_matrix)
 
 # Order samples by subtype for cleaner visualization
-subtype_order <- order(aligned_clinical$Subtype)
+subtype_order <- order(annotation_col$Subtype)
 ordered_matrix <- clustering_matrix[, subtype_order]
 ordered_annotation <- annotation_col[subtype_order, , drop = FALSE]
 
