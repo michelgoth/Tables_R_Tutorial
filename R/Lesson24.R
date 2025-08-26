@@ -14,7 +14,8 @@
 
 # SECTION 0: SETUP ---------------------------------------------
 source("R/utils.R")
-load_required_packages(c("dplyr", "survival", "survminer", "ConsensusClusterPlus", "pheatmap"))
+load_required_packages(c("dplyr", "survival", "survminer", "ConsensusClusterPlus", "pheatmap", 
+                         "DESeq2", "clusterProfiler", "enrichplot", "ggplot2"))
 
 cat("--- LESSON 24: Transcriptomic Subtype Discovery ---\n")
 
@@ -256,9 +257,269 @@ if (length(unique(aligned_clinical$Subtype)) > 1) {
   cat("Survival difference p-value:", format(1 - pchisq(survival_test$chisq, df = length(survival_test$n) - 1), digits = 3), "\n")
 }
 
-cat("Generated files:\n")
+# ===============================================================
+# SECTION 6: DIFFERENTIAL EXPRESSION ANALYSIS FOR EACH SUBTYPE
+# ===============================================================
+cat("--- Performing differential expression analysis for each subtype... ---\n")
+
+# Use the full expression data for differential expression, not just the 28 signature genes
+full_expression <- vst_counts
+
+# Function to perform differential expression for one subtype vs all others
+perform_de_analysis <- function(subtype_name, expression_data, clinical_data) {
+  cat("Analyzing", subtype_name, "vs others...\n")
+  
+  # Create binary comparison: target subtype vs all others
+  clinical_data$comparison_group <- ifelse(clinical_data$Subtype == subtype_name, 
+                                          subtype_name, "Others")
+  clinical_data$comparison_group <- factor(clinical_data$comparison_group, 
+                                          levels = c("Others", subtype_name))
+  
+  # Convert VST data back to counts for DESeq2 (approximately)
+  # Since we have VST data, we'll use a different approach with limma-style analysis
+  library(limma)
+  
+  # Create design matrix
+  design <- model.matrix(~ comparison_group, data = clinical_data)
+  
+  # Fit linear model
+  fit <- lmFit(expression_data, design)
+  fit <- eBayes(fit)
+  
+  # Extract results
+  results <- topTable(fit, coef = paste0("comparison_group", subtype_name), 
+                     number = Inf, sort.by = "P")
+  
+  # Add gene symbols (assuming rownames are gene symbols)
+  results$gene <- rownames(results)
+  
+  # Calculate -log10(p-value) for volcano plot
+  results$neg_log10_pval <- -log10(results$P.Value)
+  
+  # Add significance labels
+  results$significance <- "Not Significant"
+  results$significance[results$adj.P.Val < 0.05 & results$logFC > 1] <- "Up in Target"
+  results$significance[results$adj.P.Val < 0.05 & results$logFC < -1] <- "Down in Target"
+  
+  return(results)
+}
+
+# Install limma if not available
+if (!require(limma, quietly = TRUE)) {
+  if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+  }
+  BiocManager::install("limma")
+  library(limma)
+}
+
+# Perform DE analysis for each subtype
+subtype_names <- unique(aligned_clinical$Subtype)
+subtype_names <- subtype_names[!is.na(subtype_names)]
+
+de_results_list <- list()
+for (subtype in subtype_names) {
+  if (sum(aligned_clinical$Subtype == subtype, na.rm = TRUE) >= 5) {  # Only analyze if >= 5 samples
+    de_results_list[[subtype]] <- perform_de_analysis(subtype, full_expression, aligned_clinical)
+  }
+}
+
+# ===============================================================
+# SECTION 7: GENERATE VOLCANO PLOTS FOR EACH SUBTYPE ----------
+# ===============================================================
+cat("--- Generating volcano plots for each subtype... ---\n")
+
+# Function to create volcano plot
+create_volcano_plot <- function(de_results, subtype_name) {
+  # Filter out genes with very low expression or extreme values
+  de_results <- de_results[is.finite(de_results$neg_log10_pval) & 
+                          de_results$neg_log10_pval < 50, ]
+  
+  # Create volcano plot
+  p <- ggplot(de_results, aes(x = logFC, y = neg_log10_pval, color = significance)) +
+    geom_point(alpha = 0.6, size = 0.8) +
+    scale_color_manual(values = c("Up in Target" = "red", 
+                                 "Down in Target" = "blue", 
+                                 "Not Significant" = "grey70")) +
+    geom_hline(yintercept = -log10(0.05), linetype = "dashed", alpha = 0.7) +
+    geom_vline(xintercept = c(-1, 1), linetype = "dashed", alpha = 0.7) +
+    labs(title = paste("Differential Expression:", subtype_name, "vs Others"),
+         x = "Log2 Fold Change",
+         y = "-Log10(P-value)",
+         color = "Significance") +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5, size = 14),
+          legend.position = "bottom")
+  
+  # Add labels for top genes
+  top_up <- de_results[de_results$significance == "Up in Target", ][1:5, ]
+  top_down <- de_results[de_results$significance == "Down in Target", ][1:5, ]
+  top_genes <- rbind(top_up, top_down)
+  top_genes <- top_genes[!is.na(top_genes$gene), ]
+  
+  if (nrow(top_genes) > 0) {
+    p <- p + geom_text_repel(data = top_genes, 
+                            aes(label = gene), 
+                            size = 3, 
+                            max.overlaps = 10,
+                            show.legend = FALSE)
+  }
+  
+  return(p)
+}
+
+# Load ggrepel for gene labels
+if (!require(ggrepel, quietly = TRUE)) {
+  install.packages("ggrepel")
+  library(ggrepel)
+}
+
+# Generate volcano plots for each subtype
+for (subtype in names(de_results_list)) {
+  volcano_plot <- create_volcano_plot(de_results_list[[subtype]], subtype)
+  
+  # Save plot
+  filename <- paste0("Lesson24_Volcano_", gsub("[^A-Za-z0-9]", "_", subtype))
+  save_plot_both(volcano_plot, filename, width = 10, height = 8)
+  
+  cat("Saved volcano plot for", subtype, "\n")
+}
+
+# ===============================================================
+# SECTION 8: GSEA ANALYSIS FOR EACH SUBTYPE -------------------
+# ===============================================================
+cat("--- Performing GSEA analysis for each subtype... ---\n")
+
+# Function to perform GSEA for a subtype
+perform_gsea_analysis <- function(de_results, subtype_name) {
+  cat("GSEA for", subtype_name, "...\n")
+  
+  # Prepare gene list for GSEA (ranked by log fold change)
+  gene_list <- de_results$logFC
+  names(gene_list) <- de_results$gene
+  gene_list <- sort(gene_list, decreasing = TRUE)
+  
+  # Remove duplicates and NA values
+  gene_list <- gene_list[!duplicated(names(gene_list))]
+  gene_list <- gene_list[!is.na(names(gene_list)) & !is.na(gene_list)]
+  
+  tryCatch({
+    # Perform GSEA using Hallmark gene sets
+    gsea_results <- gseGO(geneList = gene_list,
+                         OrgDb = org.Hs.eg.db::org.Hs.eg.db,
+                         keyType = "SYMBOL",
+                         ont = "BP",  # Biological Process
+                         minGSSize = 15,
+                         maxGSSize = 500,
+                         pvalueCutoff = 0.05,
+                         verbose = FALSE)
+    
+    return(gsea_results)
+  }, error = function(e) {
+    cat("Error in GSEA for", subtype_name, ":", e$message, "\n")
+    return(NULL)
+  })
+}
+
+# Load required packages for GSEA
+if (!require(org.Hs.eg.db, quietly = TRUE)) {
+  BiocManager::install("org.Hs.eg.db")
+  library(org.Hs.eg.db)
+}
+
+# Perform GSEA for each subtype
+gsea_results_list <- list()
+for (subtype in names(de_results_list)) {
+  gsea_results_list[[subtype]] <- perform_gsea_analysis(de_results_list[[subtype]], subtype)
+}
+
+# ===============================================================
+# SECTION 9: VISUALIZE GSEA RESULTS ----------------------------
+# ===============================================================
+cat("--- Generating GSEA visualization plots... ---\n")
+
+# Generate GSEA plots for each subtype
+for (subtype in names(gsea_results_list)) {
+  gsea_result <- gsea_results_list[[subtype]]
+  
+  if (!is.null(gsea_result) && nrow(gsea_result) > 0) {
+    # Create dot plot showing top enriched pathways
+    dot_plot <- dotplot(gsea_result, showCategory = 10, 
+                       title = paste("GSEA Results:", subtype, "vs Others"),
+                       font.size = 8) +
+      theme(plot.title = element_text(hjust = 0.5))
+    
+    # Save dot plot
+    filename <- paste0("Lesson24_GSEA_Dotplot_", gsub("[^A-Za-z0-9]", "_", subtype))
+    save_plot_both(dot_plot, filename, width = 12, height = 8)
+    
+    # Create enrichment plot for top pathway if available
+    if (nrow(gsea_result) > 0) {
+      top_pathway <- gsea_result@result$ID[1]
+      
+      tryCatch({
+        enrich_plot <- gseaplot2(gsea_result, geneSetID = top_pathway,
+                               title = paste("Top Enriched Pathway -", subtype))
+        
+        filename <- paste0("Lesson24_GSEA_Enrichment_", gsub("[^A-Za-z0-9]", "_", subtype))
+        save_plot_both(enrich_plot, filename, width = 10, height = 6)
+      }, error = function(e) {
+        cat("Could not create enrichment plot for", subtype, "\n")
+      })
+    }
+    
+    cat("Generated GSEA plots for", subtype, "\n")
+  } else {
+    cat("No significant GSEA results for", subtype, "\n")
+  }
+}
+
+# ===============================================================
+# SECTION 10: SUMMARY OF DIFFERENTIAL EXPRESSION AND GSEA -----
+# ===============================================================
+cat("\n=== DIFFERENTIAL EXPRESSION AND GSEA SUMMARY ===\n")
+
+for (subtype in names(de_results_list)) {
+  cat("\n", subtype, "Subtype:\n")
+  
+  # DE summary
+  de_result <- de_results_list[[subtype]]
+  n_up <- sum(de_result$significance == "Up in Target", na.rm = TRUE)
+  n_down <- sum(de_result$significance == "Down in Target", na.rm = TRUE)
+  cat("  - Upregulated genes:", n_up, "\n")
+  cat("  - Downregulated genes:", n_down, "\n")
+  
+  # GSEA summary
+  gsea_result <- gsea_results_list[[subtype]]
+  if (!is.null(gsea_result) && nrow(gsea_result) > 0) {
+    cat("  - Enriched pathways:", nrow(gsea_result), "\n")
+    if (nrow(gsea_result) > 0) {
+      cat("  - Top pathway:", gsea_result@result$Description[1], "\n")
+    }
+  } else {
+    cat("  - No significant pathway enrichment\n")
+  }
+}
+
+cat("\nGenerated files:\n")
 cat("- plots/Lesson24_Subtype_Heatmap.pdf\n")
 cat("- plots/Lesson24_KM_by_Subtype.pdf\n")
 cat("- plots/consensus_clustering/ (consensus clustering diagnostic plots)\n")
+
+# List volcano plots
+for (subtype in names(de_results_list)) {
+  filename <- paste0("Lesson24_Volcano_", gsub("[^A-Za-z0-9]", "_", subtype))
+  cat("- plots/", filename, ".pdf\n", sep = "")
+}
+
+# List GSEA plots
+for (subtype in names(gsea_results_list)) {
+  if (!is.null(gsea_results_list[[subtype]]) && nrow(gsea_results_list[[subtype]]) > 0) {
+    filename1 <- paste0("Lesson24_GSEA_Dotplot_", gsub("[^A-Za-z0-9]", "_", subtype))
+    filename2 <- paste0("Lesson24_GSEA_Enrichment_", gsub("[^A-Za-z0-9]", "_", subtype))
+    cat("- plots/", filename1, ".pdf\n", sep = "")
+    cat("- plots/", filename2, ".pdf\n", sep = "")
+  }
+}
 
 # End of Lesson 24
