@@ -43,8 +43,9 @@ This repository provides a structured, hands-on curriculum for integrated clinic
 - Teaches critical evaluation of molecular subtypes before biological interpretation.
 - Essential for preventing false discoveries in rare subtype analysis.
 
-### Automation
-- `full_analysis_runner.R`: A script to run all analyses from Lesson 1 to 25 sequentially, ensuring full reproducibility of the results and regeneration of all plots.
+### Sequential Learning
+- Each lesson builds upon previous concepts, designed for step-by-step progression.
+- Students should complete lessons in order for optimal learning outcomes.
 
 ---
 
@@ -73,9 +74,9 @@ This repository provides a structured, hands-on curriculum for integrated clinic
    ```
    We recommend reading the corresponding lesson explanation in [`docs/Lesson01.md`](docs/Lesson01.md) as you run the script.
 
-4. Alternatively, run the entire analysis pipeline to generate all results:
+4. Continue with subsequent lessons in order:
    ```r
-   source("full_analysis_runner.R")
+   source("R/Lesson2.R")  # And so on...
    ```
 
 ---
@@ -117,8 +118,7 @@ Tables_R_Tutorial/
 │   ├── setup.R                 # Package installation and verification
 │   ├── utils.R                 # Helper functions
 │   ├── Lesson1.R … Lesson25.R  # All lessons
-│   ├── README.md               # Script documentation
-│   └── full_analysis_runner.R  # Script to run all lessons
+│   └── README.md               # Script documentation
 ├── Data/
 │   ├── ClinicalData.xlsx       # Main clinical dataset
 │   ├── CGGA.mRNAseq_...txt     # RNA-seq expression data
