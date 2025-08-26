@@ -21,31 +21,15 @@ This repository provides a structured, hands-on curriculum for integrated clinic
 
 ## Key Features
 
-### Curriculum (Lessons 1–25)
-- **Part 1: Clinical Data Analysis (Lessons 1–18)**
-    - Lessons 1–11: Foundational statistics (EDA, survival, regression, group comparisons).
-    - Lessons 12–18: Advanced clinical modeling (risk scores, interactions, validation).
-- **Part 2: Transcriptomic Data Analysis (Lessons 19–25)**
-    - Lesson 19: Exploratory analysis with Principal Component Analysis (PCA).
-    - Lesson 20: Discovery of novel prognostic genes (DE and Survival Analysis).
-    - Lesson 21: Building an integrated clinical-genomic model with Machine Learning (LASSO).
-    - Lesson 22: Uncovering biological pathways with Gene Set Enrichment Analysis (GSEA).
-    - Lesson 23: Discovery of novel predictive biomarkers of treatment response.
-    - Lesson 24: Comprehensive transcriptomic subtype discovery with differential expression and pathway analysis.
-    - Lesson 25: **Critical quality control** - detecting contamination and technical artifacts in molecular subtypes.
+### Structured Curriculum (Lessons 1–25)
+- **Part 1: Clinical Data Analysis (Lessons 1–18)**: Covers foundational statistics, from exploratory data analysis and survival modeling to the creation and validation of a clinical risk score.
+- **Part 2: Transcriptomic Data Analysis (Lessons 19–25)**: Introduces transcriptomic analysis, including PCA, differential expression, pathway analysis (GSEA), and the construction of an integrated clinical-genomic prognostic model.
+- **Part 3: Critical Quality Control (Lesson 25)**: Provides a comprehensive framework for detecting contamination and technical artifacts in molecular data, an essential step for robust scientific conclusions.
 
-### Visualization
-- Publication-ready plots saved to `plots/` for all analyses.
-- Consistent utilities via `R/utils.R`
-
-### Quality Control & Validation
-- **Lesson 25**: Comprehensive framework for detecting contamination and technical artifacts in molecular data.
-- Teaches critical evaluation of molecular subtypes before biological interpretation.
-- Essential for preventing false discoveries in rare subtype analysis.
-
-### Sequential Learning
-- Each lesson builds upon previous concepts, designed for step-by-step progression.
-- Students should complete lessons in order for optimal learning outcomes.
+### Visualization and Reproducibility
+- Publication-ready plots are automatically saved to the `plots/` directory for all analyses.
+- Centralized helper functions in `R/utils.R` ensure consistent data handling and plotting.
+- Each lesson is a self-contained, runnable script designed for sequential, step-by-step learning.
 
 ---
 
@@ -72,7 +56,7 @@ This repository provides a structured, hands-on curriculum for integrated clinic
    ```r
    source("R/Lesson1.R")
    ```
-   We recommend reading the corresponding lesson explanation in [`docs/Lesson01.md`](docs/Lesson01.md) as you run the script.
+   We recommend reading the corresponding lesson explanation in [`docs/Lesson1.md`](docs/Lesson1.md) as you run the script.
 
 4. Continue with subsequent lessons in order:
    ```r
@@ -123,8 +107,9 @@ Tables_R_Tutorial/
 │   ├── ClinicalData.xlsx       # Main clinical dataset
 │   ├── CGGA.mRNAseq_...txt     # RNA-seq expression data
 │   └── README.md               # Data documentation
-├── docs/                       # Lesson-specific explanations (1–25)
-│   ├── Lesson01.md … Lesson25.md
+├── docs/                       # Narrative explanations and reports
+│   ├── report.md               # Synthesized whitepaper of key findings
+│   └── Lesson1.md … Lesson25.md # Detailed lesson-specific tutorials
 ├── plots/                      # Auto-saved plots from all lessons
 ├── LICENSE
 └── README.md                   # This file
@@ -146,7 +131,8 @@ See `Data/README.md` for full variable documentation.
 ---
 
 ## Documentation
-- Lesson-specific write-ups are available in `docs/` (one per lesson, covering all 25 lessons), with purpose, methods, plots, and clinical interpretation tips.
+- Detailed, narrative tutorials for each lesson are available in the `docs/` directory.
+- The `docs/report.md` file provides a comprehensive whitepaper synthesizing the key biological and clinical findings from the entire analysis pipeline.
 - **Special focus on Lesson 25**: A comprehensive contamination detection framework essential for quality control in molecular subtyping.
 
 ## License
