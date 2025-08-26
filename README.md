@@ -38,6 +38,11 @@ This repository provides a structured, hands-on curriculum for integrated clinic
 - Publication-ready plots saved to `plots/` for all analyses.
 - Consistent utilities via `R/utils.R`
 
+### Quality Control & Validation
+- **Lesson 25**: Comprehensive framework for detecting contamination and technical artifacts in molecular data.
+- Teaches critical evaluation of molecular subtypes before biological interpretation.
+- Essential for preventing false discoveries in rare subtype analysis.
+
 ### Automation
 - `full_analysis_runner.R`: A script to run all analyses from Lesson 1 to 25 sequentially, ensuring full reproducibility of the results and regeneration of all plots.
 
@@ -99,6 +104,8 @@ This repository provides a structured, hands-on curriculum for integrated clinic
 - **Lesson 21: Validated survival of integrated model**
 - **Lesson 22: GSEA pathway enrichment plots**
 - **Lesson 23: Discovery of novel predictive biomarkers of treatment response**
+- **Lesson 24: Comprehensive transcriptomic subtype discovery with differential expression and pathway analysis**
+- **Lesson 25: Biological validation of rare molecular subtypes - contamination detection and quality control**
 
 ---
 
