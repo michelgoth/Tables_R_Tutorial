@@ -21,23 +21,25 @@ This repository provides a structured, hands-on curriculum for integrated clinic
 
 ## Key Features
 
-### Curriculum (Lessons 1–23)
+### Curriculum (Lessons 1–25)
 - **Part 1: Clinical Data Analysis (Lessons 1–18)**
     - Lessons 1–11: Foundational statistics (EDA, survival, regression, group comparisons).
     - Lessons 12–18: Advanced clinical modeling (risk scores, interactions, validation).
-- **Part 2: Transcriptomic Data Analysis (Lessons 19–23)**
+- **Part 2: Transcriptomic Data Analysis (Lessons 19–25)**
     - Lesson 19: Exploratory analysis with Principal Component Analysis (PCA).
     - Lesson 20: Discovery of novel prognostic genes (DE and Survival Analysis).
     - Lesson 21: Building an integrated clinical-genomic model with Machine Learning (LASSO).
     - Lesson 22: Uncovering biological pathways with Gene Set Enrichment Analysis (GSEA).
     - Lesson 23: Discovery of novel predictive biomarkers of treatment response.
+    - Lesson 24: Comprehensive transcriptomic subtype discovery with differential expression and pathway analysis.
+    - Lesson 25: **Critical quality control** - detecting contamination and technical artifacts in molecular subtypes.
 
 ### Visualization
 - Publication-ready plots saved to `plots/` for all analyses.
 - Consistent utilities via `R/utils.R`
 
 ### Automation
-- `full_analysis_runner.R`: A script to run all analyses from Lesson 1 to 23 sequentially, ensuring full reproducibility of the results and regeneration of all plots.
+- `full_analysis_runner.R`: A script to run all analyses from Lesson 1 to 25 sequentially, ensuring full reproducibility of the results and regeneration of all plots.
 
 ---
 
@@ -107,15 +109,15 @@ Tables_R_Tutorial/
 ├── R/                          # R scripts
 │   ├── setup.R                 # Package installation and verification
 │   ├── utils.R                 # Helper functions
-│   ├── Lesson1.R … Lesson23.R  # All lessons
+│   ├── Lesson1.R … Lesson25.R  # All lessons
 │   ├── README.md               # Script documentation
 │   └── full_analysis_runner.R  # Script to run all lessons
 ├── Data/
 │   ├── ClinicalData.xlsx       # Main clinical dataset
 │   ├── CGGA.mRNAseq_...txt     # RNA-seq expression data
 │   └── README.md               # Data documentation
-├── docs/                       # Lesson-specific explanations (1–23)
-│   ├── Lesson01.md … Lesson23.md
+├── docs/                       # Lesson-specific explanations (1–25)
+│   ├── Lesson01.md … Lesson25.md
 ├── plots/                      # Auto-saved plots from all lessons
 ├── LICENSE
 └── README.md                   # This file
@@ -137,7 +139,8 @@ See `Data/README.md` for full variable documentation.
 ---
 
 ## Documentation
-- Lesson-specific write-ups are available in `docs/` (one per lesson), with purpose, methods, plots, and clinical interpretation tips.
+- Lesson-specific write-ups are available in `docs/` (one per lesson, covering all 25 lessons), with purpose, methods, plots, and clinical interpretation tips.
+- **Special focus on Lesson 25**: A comprehensive contamination detection framework essential for quality control in molecular subtyping.
 
 ## License
 
