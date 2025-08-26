@@ -32,7 +32,8 @@ The analytical pipeline is built from a series of lesson scripts in the `R/` dir
 
 ## 1. Cohort Profile: Establishing the Clinical Baseline
 
-We began by characterizing the cohort to ensure it reflects a typical adult glioma population.
+We began by characterizing the cohort to ensure it reflects a typical adult glioma population. The script `R/Lesson1.R` loads the data, cleans it using helper functions from `R/utils.R`, and generates simple visualizations. Specifically, it creates a histogram to show the age distribution of patients and uses proportional bar charts to visualize the distribution of tumor grades across different presentation types (e.g., primary vs. recurrent tumors). These initial steps are fundamental to any analysis, providing a crucial first look at the data's structure and confirming its suitability for the questions we aim to answer.
+
 - **Figure 1 (Lesson 1)**: The age distribution is right-skewed, with a median in the 40s, consistent with typical glioma cohorts.
 - **Figures 2 & 3 (Lesson 1)**: The cohort includes a mix of WHO grades II, III, and IV, with an expected shift in grade composition between primary and recurrent tumors.
 
@@ -44,7 +45,8 @@ These initial plots confirm the dataset's suitability for illustrating fundament
 
 ## 2. Foundational Survival Signals: IDH and MGMT
 
-Next, we validated the prognostic roles of the two most important molecular markers.
+Next, we validated the prognostic roles of the two most important molecular markers. In `R/Lesson4.R` and `R/Lesson5.R`, we introduce survival analysis. The core steps involve creating a `Surv` object, which combines time-to-event (Overall Survival) and event status (Censor) data. We then use this object in the `survfit` function to create Kaplan-Meier survival models, stratified by IDH mutation and MGMT methylation status, respectively. The `ggsurvplot` function is then used to create publication-quality visualizations of these models, complete with confidence intervals, p-values from the log-rank test, and a risk table showing the number of patients at risk over time. Finally, `R/Lesson6.R` builds on this by fitting a multivariable Cox proportional hazards model (`coxph` function) to assess the independent prognostic significance of these markers alongside clinical variables like age and grade.
+
 - **Figure 4 (Lesson 4)**: Kaplan-Meier analysis shows a dramatic and statistically significant survival advantage for patients with IDH-mutant tumors compared to IDH-wildtype. This confirms IDH status as a core prognostic pillar in this cohort.
 - **Figure 5 (Lesson 5)**: Similarly, MGMT promoter methylation is associated with significantly longer overall survival.
 - **Figure 6 (Lesson 6)**: A multivariable Cox model confirms that these markers, along with age and grade, are independent predictors of outcome. The forest plot shows the hazard ratios, quantifying how much each factor contributes to risk after adjusting for the others.
@@ -59,10 +61,11 @@ These results are not new, but confirming them is a critical first step that anc
 
 ## 3. Integrative Risk: Combining Markers and Treatments
 
-Individual markers are powerful, but their real clinical utility comes from integration.
+Individual markers are powerful, but their real clinical utility comes from integration. The script `R/Lesson14.R` demonstrates this by creating a new grouping variable that combines both IDH and MGMT status. A Kaplan-Meier analysis on this four-level factor reveals a much-improved risk stratification compared to either marker alone. Following this, `R/Lesson15.R` investigates the *predictive* role of MGMT by subsetting the data into methylated and un-methylated groups and performing separate survival analyses within each to visualize the differential benefit of Temozolomide (TMZ). Finally, `R/Lesson17.R` translates the statistical findings from the multivariable Cox model into a practical tool. It extracts the model coefficients (log hazard ratios), simplifies them into integer-based points to create a prognostic score, and then uses Kaplan-Meier analysis to validate that this score effectively separates patients into distinct low-, medium-, and high-risk groups.
+
 - **Figure 7 (Lesson 14)**: Combining IDH and MGMT status creates four distinct prognostic groups. The survival separation is visibly superior to either marker alone, with IDH-mutant/MGMT-methylated patients having the best prognosis and IDH-wildtype/MGMT-unmethylated having the worst. This demonstrates a synergistic effect and forms the basis of modern glioma risk stratification.
 - **Figure 8 (Lesson 15)**: The survival benefit associated with Temozolomide (TMZ) is far more pronounced in the MGMT-methylated group. This plot visually confirms the *predictive* role of MGMT, providing a clear biological rationale for its use in treatment decisions.
-- **Figure 9 (Lesson 17)**: We distilled the multivariable Cox model into a simple point-based score. The scorecard provides an easy-to-use clinical tool, and the Kaplan-Meier curves show it successfully separates patients into low, medium, and high-risk groups. This is a practical example of translating a statistical model into a potentially actionable clinical instrument.
+- **Figure 9 (Lesson 17)**: We distilled the multivariable Cox model into a simple point-based score. The scorecard provides an easy-to-use clinical tool, and the Kaplan-Meier curves show it successfully separates patients into low-, medium-, and high-risk groups. This is a practical example of translating a statistical model into a potentially actionable clinical instrument.
 
 ![Figure 6: Kaplan-Meier curves for the four joint risk groups defined by IDH and MGMT status. (Generated by R/Lesson14.R)](../plots/Lesson14_KM_by_IDH_MGMT.png)
 
@@ -75,7 +78,8 @@ Individual markers are powerful, but their real clinical utility comes from inte
 
 ## 4. The Transcriptional Landscape: Biology Underlying Prognosis
 
-Finally, we explored gene expression data to find the biological basis for these clinical observations.
+Finally, we explored gene expression data to find the biological basis for these clinical observations. The analysis in `R/Lesson19.R` begins by integrating the clinical data with RNA-sequencing data. It then performs Principal Component Analysis (PCA), a dimensionality reduction technique, on the variance-stabilized expression data. Plotting the first two principal components reveals how samples cluster based on their global expression profiles, and coloring the points by clinical features (like IDH status) shows whether these features correspond to distinct transcriptional states. Building on this, `R/Lesson22.R` and `R/Lesson24.R` perform Gene Set Enrichment Analysis (GSEA) to identify the biological pathways and processes that are active in different tumor groups. These scripts use the results of differential expression analysis to find coordinated changes in gene sets (e.g., the established Proneural, Mesenchymal glioma subtypes) and visualize them as heatmaps and enrichment plots, connecting the clinical observations back to underlying tumor biology.
+
 - **Figure 10 (Lesson 19)**: Principal Component Analysis (PCA) shows that the major clinical groups (Grade, IDH, MGMT) form distinct clusters in expression space. This confirms they correspond to global, coherent shifts in tumor biology.
 - **Figure 11 & 12 (Lessons 22, 24)**: Gene Set Enrichment Analysis (GSEA) and subtype clustering reveal that these shifts are driven by known biological programs, particularly the proneural, neural, and mesenchymal transcriptional subtypes. The heatmap and Kaplan-Meier curves show that these expression-based subtypes are themselves strongly prognostic, validating their clinical and biological relevance.
 
