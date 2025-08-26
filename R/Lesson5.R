@@ -56,8 +56,9 @@ if (all(c("OS", "Censor") %in% names(data))) {
       conf.int = TRUE,
       risk.table = TRUE,
       legend.title = "MGMT Status",
-      legend.labs = c("Methylated", "Un-methylated"),
-      palette = c("blue", "red"),
+      legend.labs = c("Methylated", "Unmethylated"),
+      legend = "top",
+      palette = c("#E7B800", "#2E9FDF"),
       title = "Survival by MGMT Methylation Status",
       xlab = "Time (days)"
     )

@@ -51,7 +51,8 @@ head(data)
 p1 <- ggplot(data, aes(x = Age)) +
   geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
   labs(title = "Age Distribution", x = "Age", y = "Count") +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "none") # No legend needed for a simple histogram
 
 # 'print()' displays the plot in your R session.
 print(p1)
@@ -66,7 +67,8 @@ p2 <- ggplot(data, aes(x = Grade, fill = Gender)) +
   # different genders next to each other, rather than stacked.
   geom_bar(position = "dodge") +
   labs(title = "Tumor Grade by Gender", x = "Grade", y = "Count") +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "top")
 
 print(p2)
 save_plot_both(p2, base_filename = "Lesson1_Grade_by_Gender")
@@ -81,7 +83,8 @@ p3 <- ggplot(data, aes(x = PRS_type, fill = Grade)) +
        y = "Proportion", x = "PRS Type") +
   # 'scale_fill_brewer' applies a pre-defined color palette to the plot.
   scale_fill_brewer(palette = "Set2") +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "top")
 
 print(p3)
 save_plot_both(p3, base_filename = "Lesson1_Grades_within_PRS")

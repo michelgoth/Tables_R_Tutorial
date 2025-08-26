@@ -62,9 +62,10 @@ if ("IDH_mutation_status" %in% names(data)) {
     data = data,
     pval = TRUE,             # Add log-rank p-value
     conf.int = TRUE,         # Add confidence intervals
-    risk.table = TRUE,       # Add at-risk table
+    risk.table = TRUE, legend = "top",       # Add at-risk table
     legend.title = "IDH Status",
     legend.labs = c("Mutant", "Wildtype"),
+    legend = "top",          # Explicitly set legend position
     palette = c("#00BA38", "#F8766D"),
     title = "Survival by IDH Mutation Status",
     xlab = "Time (days)"
