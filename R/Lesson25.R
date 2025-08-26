@@ -1,16 +1,17 @@
 # ===============================================================
-# LESSON 25: NEURAL SUBTYPE DEEP DIVE - THE HYPERACTIVATION PHENOTYPE
+# LESSON 25: NEURAL SUBTYPE EXPLORATORY ANALYSIS - STATISTICAL VALIDATION
 # ===============================================================
 #
 # OBJECTIVE:
-# To deeply investigate the Neural subtype's extraordinary transcriptional
-# hyperactivation (2,005 upregulated genes) and complement pathway enrichment,
-# uncovering the biological mechanisms driving this rare but distinct phenotype.
+# To systematically investigate the Neural subtype identified in Lesson 24,
+# applying rigorous statistical methods to determine if the observed patterns
+# represent genuine biological signal or potential technical artifacts.
 #
-# WHY THIS IS CRITICAL:
-# The Neural subtype shows the most extreme transcriptional activity in our
-# analysis, with complement activation suggesting a unique neuroinflammatory
-# state that could represent a novel therapeutic target.
+# CRITICAL CONSIDERATIONS:
+# - Small sample size (n=10) requires conservative statistical approaches
+# - Multiple testing corrections are essential
+# - Technical validation needed before biological interpretation
+# - Results should be considered preliminary pending independent validation
 # ===============================================================
 
 # SECTION 0: SETUP ---------------------------------------------
@@ -116,7 +117,7 @@ print(table(aligned_clinical$Subtype))
 # ===============================================================
 # SECTION 2: IDENTIFY NEURAL SUBTYPE PATIENTS ------------------
 # ===============================================================
-cat("--- Analyzing Neural subtype patients in detail... ---\n")
+cat("--- Statistical validation of Neural subtype identification... ---\n")
 
 neural_patients <- rownames(aligned_clinical)[aligned_clinical$Subtype == "Neural"]
 other_patients <- rownames(aligned_clinical)[aligned_clinical$Subtype != "Neural"]
@@ -124,71 +125,135 @@ other_patients <- rownames(aligned_clinical)[aligned_clinical$Subtype != "Neural
 cat("Neural subtype patients:", length(neural_patients), "\n")
 cat("Other subtype patients:", length(other_patients), "\n")
 
-# Clinical characteristics of Neural subtype
+# CRITICAL ASSESSMENT: Check sample size adequacy
+if (length(neural_patients) < 20) {
+  cat("\n⚠️  WARNING: Small sample size (n =", length(neural_patients), ") limits statistical power\n")
+  cat("   Minimum recommended: n >= 20 for differential expression analysis\n")
+  cat("   Results should be interpreted with extreme caution\n\n")
+}
+
+# Clinical characteristics with statistical testing
 neural_clinical <- aligned_clinical[aligned_clinical$Subtype == "Neural", ]
 other_clinical <- aligned_clinical[aligned_clinical$Subtype != "Neural", ]
 
-cat("\n=== NEURAL SUBTYPE CLINICAL CHARACTERISTICS ===\n")
-cat("Age (mean ± SD):\n")
-cat("  Neural:", round(mean(neural_clinical$Age, na.rm = TRUE), 1), "±", 
-    round(sd(neural_clinical$Age, na.rm = TRUE), 1), "\n")
-cat("  Others:", round(mean(other_clinical$Age, na.rm = TRUE), 1), "±", 
-    round(sd(other_clinical$Age, na.rm = TRUE), 1), "\n")
+cat("=== NEURAL SUBTYPE CLINICAL VALIDATION ===\n")
 
-cat("Gender distribution:\n")
+# Age comparison with statistical test
+age_test <- t.test(neural_clinical$Age, other_clinical$Age)
+cat("Age comparison:\n")
+cat("  Neural: ", round(mean(neural_clinical$Age, na.rm = TRUE), 1), " ± ", 
+    round(sd(neural_clinical$Age, na.rm = TRUE), 1), "\n")
+cat("  Others: ", round(mean(other_clinical$Age, na.rm = TRUE), 1), " ± ", 
+    round(sd(other_clinical$Age, na.rm = TRUE), 1), "\n")
+cat("  t-test p-value:", format(age_test$p.value, digits = 3), "\n\n")
+
+# Gender distribution with Fisher's exact test
+gender_table <- table(aligned_clinical$Subtype == "Neural", aligned_clinical$Gender)
+if (min(gender_table) >= 5) {
+  gender_test <- fisher.test(gender_table)
+  cat("Gender distribution test p-value:", format(gender_test$p.value, digits = 3), "\n")
+} else {
+  cat("Gender distribution: insufficient counts for statistical testing\n")
+}
+
+cat("Neural subtype gender breakdown:\n")
 print(table(neural_clinical$Gender))
 
-cat("Grade distribution:\n")
+# Grade distribution analysis
+cat("Grade distribution (may be confounding factor):\n")
 print(table(neural_clinical$Grade))
+grade_props <- prop.table(table(neural_clinical$Grade))
+cat("Neural grade proportions:\n")
+print(round(grade_props, 2))
 
-cat("IDH status:\n")
-print(table(neural_clinical$IDH_codel_subtype))
+# Check for potential confounding
+other_grade_props <- prop.table(table(other_clinical$Grade))
+cat("Other subtypes grade proportions:\n")
+print(round(other_grade_props, 2))
 
 # ===============================================================
 # SECTION 3: NEURAL HYPERACTIVATION GENE ANALYSIS -------------
 # ===============================================================
-cat("--- Performing detailed differential expression analysis for Neural subtype... ---\n")
+cat("--- Rigorous differential expression analysis with statistical validation... ---\n")
 
 if (!require(limma, quietly = TRUE)) {
   BiocManager::install("limma")
   library(limma)
 }
 
-# Create comparison: Neural vs all others
+# CRITICAL: Sample size check
+n_neural <- sum(aligned_clinical$Subtype == "Neural")
+n_others <- sum(aligned_clinical$Subtype != "Neural")
+
+if (n_neural < 10) {
+  cat("⚠️  STOPPING: Insufficient Neural samples (n =", n_neural, ") for reliable DE analysis\n")
+  cat("   Minimum recommended: n >= 10 per group\n")
+  stop("Analysis terminated due to inadequate sample size")
+}
+
+cat("Sample sizes: Neural =", n_neural, ", Others =", n_others, "\n")
+cat("⚠️  WARNING: Extreme class imbalance may affect results\n\n")
+
+# Create comparison with explicit factor levels
 aligned_clinical$neural_comparison <- ifelse(aligned_clinical$Subtype == "Neural", "Neural", "Others")
 aligned_clinical$neural_comparison <- factor(aligned_clinical$neural_comparison, levels = c("Others", "Neural"))
 
-# Perform differential expression
-design <- model.matrix(~ neural_comparison, data = aligned_clinical)
-fit <- lmFit(vst_counts, design)
-fit <- eBayes(fit)
+# Enhanced design matrix with potential confounders
+design <- model.matrix(~ neural_comparison + Grade, data = aligned_clinical)
+colnames(design) <- make.names(colnames(design))
 
+# Perform differential expression with robust methods
+fit <- lmFit(vst_counts, design)
+fit <- eBayes(fit, robust = TRUE)  # Use robust methods
+
+# Extract results with multiple testing correction
 neural_de_results <- topTable(fit, coef = "neural_comparisonNeural", 
-                             number = Inf, sort.by = "P")
+                             number = Inf, sort.by = "P",
+                             adjust.method = "BH")  # Explicit FDR correction
+
 neural_de_results$gene <- rownames(neural_de_results)
 neural_de_results$neg_log10_pval <- -log10(neural_de_results$P.Value)
 
-# Define significance thresholds
+# Conservative significance thresholds
+# Use stricter FDR and fold change cutoffs due to small sample size
 neural_de_results$significance <- "Not Significant"
-neural_de_results$significance[neural_de_results$adj.P.Val < 0.05 & neural_de_results$logFC > 1] <- "Upregulated in Neural"
-neural_de_results$significance[neural_de_results$adj.P.Val < 0.05 & neural_de_results$logFC < -1] <- "Downregulated in Neural"
+neural_de_results$significance[neural_de_results$adj.P.Val < 0.01 & neural_de_results$logFC > 2] <- "Upregulated in Neural"
+neural_de_results$significance[neural_de_results$adj.P.Val < 0.01 & neural_de_results$logFC < -2] <- "Downregulated in Neural"
 
-cat("Neural subtype differential expression summary:\n")
+cat("CONSERVATIVE differential expression summary (FDR < 0.01, |logFC| > 2):\n")
 print(table(neural_de_results$significance))
 
-# Get the top upregulated genes (the hyperactivation signature)
-top_neural_up <- neural_de_results[neural_de_results$significance == "Upregulated in Neural", ]
-top_neural_up <- top_neural_up[order(top_neural_up$logFC, decreasing = TRUE), ]
+# Calculate effect sizes and confidence intervals
+up_genes <- neural_de_results[neural_de_results$significance == "Upregulated in Neural", ]
+down_genes <- neural_de_results[neural_de_results$significance == "Downregulated in Neural", ]
 
-cat("Top 20 most upregulated genes in Neural subtype:\n")
-print(top_neural_up[1:20, c("gene", "logFC", "adj.P.Val")])
+cat("\nStatistical summary:\n")
+cat("Upregulated genes (conservative):", nrow(up_genes), "\n")
+cat("Downregulated genes (conservative):", nrow(down_genes), "\n")
+cat("Total significant genes:", nrow(up_genes) + nrow(down_genes), "\n")
+cat("Percentage of genome significant:", 
+    round((nrow(up_genes) + nrow(down_genes)) / nrow(neural_de_results) * 100, 2), "%\n")
+
+if (nrow(up_genes) > 0) {
+  cat("\nTop upregulated genes (with conservative thresholds):\n")
+  print(up_genes[1:min(10, nrow(up_genes)), c("gene", "logFC", "adj.P.Val", "AveExpr")])
+}
+
+# Quality control metrics
+cat("\n=== QUALITY CONTROL METRICS ===\n")
+cat("Median log-fold change (all genes):", round(median(neural_de_results$logFC), 3), "\n")
+cat("SD of log-fold changes:", round(sd(neural_de_results$logFC), 3), "\n")
+cat("Genes with |logFC| > 5:", sum(abs(neural_de_results$logFC) > 5), "\n")
+if (sum(abs(neural_de_results$logFC) > 5) > 0) {
+  cat("⚠️  WARNING: Extreme fold changes detected - possible technical artifacts\n")
+}
 
 # ===============================================================
 # SECTION 4: COMPLEMENT PATHWAY DEEP DIVE ---------------------
 # ===============================================================
-cat("--- Investigating complement pathway genes in Neural subtype... ---\n")
+cat("--- Hypothesis-driven pathway analysis: Complement system ---\n")
 
-# Key complement pathway genes
+# Define comprehensive complement pathway genes
 complement_genes <- c(
   "C1QA", "C1QB", "C1QC", "C1R", "C1S",  # Classical pathway
   "C3", "C3AR1", "C5AR1", "C5AR2",        # Central complement
@@ -199,86 +264,157 @@ complement_genes <- c(
   "C6", "C7", "C8A", "C8B", "C9"          # Membrane attack complex
 )
 
-# Check which complement genes are available and differentially expressed
 available_complement <- intersect(complement_genes, rownames(neural_de_results))
-complement_de <- neural_de_results[available_complement, ]
-complement_de <- complement_de[order(complement_de$logFC, decreasing = TRUE), ]
+cat("Complement genes available for analysis:", length(available_complement), "out of", length(complement_genes), "\n")
 
-cat("Complement genes in Neural subtype (top 10):\n")
-print(complement_de[1:min(10, nrow(complement_de)), c("gene", "logFC", "adj.P.Val", "significance")])
+if (length(available_complement) > 0) {
+  complement_de <- neural_de_results[available_complement, ]
+  complement_de <- complement_de[order(complement_de$P.Value), ]
+  
+  cat("\nComplement pathway genes analysis:\n")
+  print(complement_de[, c("gene", "logFC", "P.Value", "adj.P.Val", "significance")])
+  
+  # Statistical test: Are complement genes systematically altered?
+  complement_pvals <- complement_de$P.Value
+  median_pval <- median(complement_pvals)
+  cat("\nComplement pathway statistical summary:\n")
+  cat("Median p-value:", format(median_pval, digits = 3), "\n")
+  cat("Genes with p < 0.05:", sum(complement_pvals < 0.05), "out of", length(complement_pvals), "\n")
+  
+  # Enrichment test using Fisher's exact test
+  sig_complement <- sum(complement_pvals < 0.05)
+  total_complement <- length(complement_pvals)
+  sig_genome <- sum(neural_de_results$P.Value < 0.05)
+  total_genome <- nrow(neural_de_results)
+  
+  enrichment_test <- fisher.test(matrix(c(sig_complement, total_complement - sig_complement,
+                                         sig_genome - sig_complement, total_genome - total_genome + sig_complement),
+                                       nrow = 2))
+  cat("Complement pathway enrichment p-value:", format(enrichment_test$p.value, digits = 3), "\n")
+  
+} else {
+  cat("⚠️  No complement genes available for analysis\n")
+}
 
 # ===============================================================
 # SECTION 5: PATHWAY NETWORK ANALYSIS --------------------------
 # ===============================================================
-cat("--- Creating pathway network for Neural subtype... ---\n")
+cat("--- Conservative pathway enrichment analysis ---\n")
 
-# Perform GSEA for Neural subtype
+# CRITICAL: Only proceed if we have sufficient differential genes
+if (nrow(up_genes) + nrow(down_genes) < 50) {
+  cat("⚠️  WARNING: Too few significant genes (", nrow(up_genes) + nrow(down_genes), 
+      ") for reliable pathway analysis\n")
+  cat("   Recommended minimum: 50+ genes\n")
+  cat("   Proceeding with exploratory analysis only\n\n")
+}
+
+# Prepare gene list for GSEA with quality controls
+gene_list <- neural_de_results$logFC
+names(gene_list) <- neural_de_results$gene
+gene_list <- sort(gene_list, decreasing = TRUE)
+
+# Remove duplicates and missing values
+gene_list <- gene_list[!duplicated(names(gene_list))]
+gene_list <- gene_list[!is.na(names(gene_list)) & !is.na(gene_list) & is.finite(gene_list)]
+
+cat("Gene list for GSEA: ", length(gene_list), "genes\n")
+
 if (!require(org.Hs.eg.db, quietly = TRUE)) {
   BiocManager::install("org.Hs.eg.db")
   library(org.Hs.eg.db)
 }
 
-gene_list <- neural_de_results$logFC
-names(gene_list) <- neural_de_results$gene
-gene_list <- sort(gene_list, decreasing = TRUE)
-gene_list <- gene_list[!duplicated(names(gene_list))]
-gene_list <- gene_list[!is.na(names(gene_list)) & !is.na(gene_list)]
-
-neural_gsea <- gseGO(geneList = gene_list,
-                    OrgDb = org.Hs.eg.db,
-                    keyType = "SYMBOL",
-                    ont = "BP",
-                    minGSSize = 15,
-                    maxGSSize = 500,
-                    pvalueCutoff = 0.05,
-                    verbose = FALSE)
-
-cat("Neural GSEA results:", nrow(neural_gsea), "significant pathways\n")
-
-if (nrow(neural_gsea) > 0) {
-  cat("Top 10 Neural pathways:\n")
-  print(neural_gsea@result[1:10, c("Description", "NES", "p.adjust")])
-}
+# Perform GSEA with conservative settings
+tryCatch({
+  neural_gsea <- gseGO(geneList = gene_list,
+                      OrgDb = org.Hs.eg.db,
+                      keyType = "SYMBOL",
+                      ont = "BP",
+                      minGSSize = 20,        # Increased minimum
+                      maxGSSize = 300,       # Decreased maximum  
+                      pvalueCutoff = 0.01,   # More stringent
+                      verbose = FALSE,
+                      eps = 1e-10)          # Better p-value estimation
+  
+  if (is.null(neural_gsea) || nrow(neural_gsea) == 0) {
+    cat("No significant pathways found with conservative thresholds\n")
+  } else {
+    cat("Significant pathways (FDR < 0.01):", nrow(neural_gsea), "\n")
+    
+    if (nrow(neural_gsea) > 0) {
+      cat("\nTop pathways (ordered by significance):\n")
+      top_pathways <- neural_gsea@result[1:min(10, nrow(neural_gsea)), 
+                                        c("Description", "NES", "pvalue", "p.adjust", "setSize")]
+      print(top_pathways)
+      
+      # Quality checks
+      extreme_nes <- sum(abs(neural_gsea@result$NES) > 3)
+      if (extreme_nes > 0) {
+        cat("\n⚠️  WARNING:", extreme_nes, "pathways with |NES| > 3 detected\n")
+        cat("   Extreme enrichment scores may indicate technical artifacts\n")
+      }
+    }
+  }
+}, error = function(e) {
+  cat("GSEA analysis failed:", e$message, "\n")
+  cat("This may indicate issues with gene list quality or sample size\n")
+  neural_gsea <<- NULL
+})
 
 # ===============================================================
 # SECTION 6: VISUALIZATION OF NEURAL HYPERACTIVATION ----------
 # ===============================================================
-cat("--- Creating visualizations for Neural hyperactivation... ---\n")
+cat("--- Creating statistically-informed visualizations ---\n")
 
-# 1. Enhanced volcano plot focusing on Neural subtype
+# Quality-controlled volcano plot
+n_up_conservative <- nrow(up_genes)
+n_down_conservative <- nrow(down_genes)
+
+volcano_title <- paste0("Neural Subtype Analysis (n=", n_neural, " vs n=", n_others, ")")
+volcano_subtitle <- paste0("Conservative thresholds: ", n_up_conservative, " up, ", 
+                          n_down_conservative, " down (FDR<0.01, |logFC|>2)")
+
 neural_volcano <- ggplot(neural_de_results, aes(x = logFC, y = neg_log10_pval, color = significance)) +
   geom_point(alpha = 0.6, size = 1) +
   scale_color_manual(values = c("Upregulated in Neural" = "red", 
                                "Downregulated in Neural" = "blue", 
                                "Not Significant" = "grey70")) +
-  geom_hline(yintercept = -log10(0.05), linetype = "dashed", alpha = 0.7) +
-  geom_vline(xintercept = c(-1, 1), linetype = "dashed", alpha = 0.7) +
-  labs(title = "Neural Subtype Hyperactivation: 2,005 Upregulated Genes",
-       subtitle = "The Most Transcriptionally Active Glioma Subtype",
+  geom_hline(yintercept = -log10(0.01), linetype = "dashed", alpha = 0.7, color = "red") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dotted", alpha = 0.5) +
+  geom_vline(xintercept = c(-2, 2), linetype = "dashed", alpha = 0.7, color = "red") +
+  geom_vline(xintercept = c(-1, 1), linetype = "dotted", alpha = 0.5) +
+  xlim(c(-8, 8)) +  # Limit extreme values for better visualization
+  labs(title = volcano_title,
+       subtitle = volcano_subtitle,
        x = "Log2 Fold Change (Neural vs Others)",
        y = "-Log10(P-value)",
-       color = "Regulation in Neural") +
+       color = "Statistical Significance",
+       caption = "Red lines: conservative thresholds (FDR<0.01, |logFC|>2)") +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
-        plot.subtitle = element_text(hjust = 0.5, size = 12),
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 11),
+        plot.caption = element_text(size = 9, color = "grey50"),
         legend.position = "bottom")
 
-# Add labels for top complement genes
-if (nrow(complement_de) > 0) {
-  top_complement <- complement_de[1:min(10, nrow(complement_de)), ]
+# Only add gene labels if we have significant genes and they're not too numerous
+if (nrow(up_genes) > 0 && nrow(up_genes) < 20) {
+  top_up_genes <- up_genes[1:min(5, nrow(up_genes)), ]
   neural_volcano <- neural_volcano + 
-    geom_text_repel(data = top_complement,
+    geom_text_repel(data = top_up_genes,
                    aes(label = gene),
                    size = 3,
-                   max.overlaps = 15,
+                   max.overlaps = 10,
                    show.legend = FALSE,
                    color = "darkred")
 }
 
-save_plot_both(neural_volcano, "Lesson25_Neural_Hyperactivation_Volcano", width = 12, height = 10)
+save_plot_both(neural_volcano, "Lesson25_Neural_Statistical_Volcano", width = 12, height = 10)
 
-# 2. Heatmap of top Neural genes across all subtypes
-top_neural_genes <- head(top_neural_up$gene, 50)
+# 2. Heatmap of top Neural genes across all subtypes (if we have any)
+if (nrow(up_genes) > 0) {
+  n_genes_for_heatmap <- min(50, nrow(up_genes))
+  top_neural_genes <- head(up_genes$gene, n_genes_for_heatmap)
 neural_heatmap_data <- vst_counts[top_neural_genes, ]
 
 # Create subtype annotation
@@ -306,11 +442,14 @@ pheatmap(
   cluster_cols = FALSE,
   cluster_rows = TRUE,
   scale = "row",
-  main = "Top 50 Neural Hyperactivation Genes Across All Subtypes",
+  main = paste("Top", n_genes_for_heatmap, "Neural Genes Across All Subtypes"),
   fontsize_row = 8,
   fontsize_col = 8
 )
 dev.off()
+} else {
+  cat("No significantly upregulated genes found for heatmap generation\n")
+}
 
 # 3. Complement pathway focused heatmap
 if (length(available_complement) > 5) {
@@ -371,57 +510,81 @@ dev.off()
 # ===============================================================
 cat("--- Analyzing therapeutic implications... ---\n")
 
-# Drug target analysis for top Neural genes
-neural_drug_targets <- top_neural_up[1:100, ]  # Top 100 genes
+# Create summary table based on available data
+if (nrow(up_genes) > 0) {
+  therapeutic_summary <- data.frame(
+    Category = c("Total upregulated genes", "Complement pathway genes", "Neuronal pathways", 
+                 "Translation pathways", "Potential drug targets"),
+    Count = c(
+      nrow(up_genes),
+      sum(complement_pvals < 0.05),
+      ifelse(exists("neural_gsea") && nrow(neural_gsea) > 0, 
+             sum(grepl("neuro|synap", neural_gsea@result$Description, ignore.case = TRUE)), 0),
+      ifelse(exists("neural_gsea") && nrow(neural_gsea) > 0, 
+             sum(grepl("translation", neural_gsea@result$Description, ignore.case = TRUE)), 0),
+      min(100, nrow(up_genes))
+    ),
+    Significance = c("FDR < 0.01", "p < 0.05", "GSEA", "GSEA", "Top targets")
+  )
 
-# Create summary table
-therapeutic_summary <- data.frame(
-  Category = c("Total upregulated genes", "Complement pathway genes", "Immune response genes", 
-               "Neural development genes", "Potential drug targets"),
-  Count = c(
-    sum(neural_de_results$significance == "Upregulated in Neural"),
-    sum(complement_de$significance == "Upregulated in Neural", na.rm = TRUE),
-    0,  # Will be filled by pathway analysis
-    0,  # Will be filled by pathway analysis
-    nrow(neural_drug_targets)
-  ),
-  Significance = c("p < 0.05", "p < 0.05", "GSEA", "GSEA", "Top 100 by logFC")
-)
-
-cat("\n=== THERAPEUTIC IMPLICATIONS SUMMARY ===\n")
-print(therapeutic_summary)
+  cat("\n=== THERAPEUTIC IMPLICATIONS SUMMARY ===\n")
+  print(therapeutic_summary)
+} else {
+  cat("No therapeutic targets identified with conservative thresholds\n")
+}
 
 # ===============================================================
 # SECTION 9: SUMMARY AND CONCLUSIONS ---------------------------
 # ===============================================================
-cat("\n=== NEURAL SUBTYPE DEEP DIVE SUMMARY ===\n")
+cat("\n=== STATISTICAL SUMMARY AND CRITICAL ASSESSMENT ===\n")
 
-cat("KEY FINDINGS:\n")
-cat("1. Neural subtype shows extreme transcriptional hyperactivation\n")
-cat("2. Complement pathway is significantly enriched\n")
-cat("3. Represents", length(neural_patients), "patients (", 
+cat("SAMPLE SIZE ANALYSIS:\n")
+cat("- Neural subtype: n =", length(neural_patients), "(", 
     round(length(neural_patients)/nrow(aligned_clinical)*100, 1), "% of cohort)\n")
+cat("- Statistical power: INSUFFICIENT for definitive conclusions\n")
+cat("- Multiple testing burden: HIGH (", nrow(neural_de_results), "genes tested)\n\n")
 
-if (nrow(neural_gsea) > 0) {
-  cat("4. Top enriched pathway:", neural_gsea@result$Description[1], "\n")
+cat("DIFFERENTIAL EXPRESSION RESULTS (CONSERVATIVE):\n")
+cat("- Upregulated genes (FDR<0.01, logFC>2):", nrow(up_genes), "\n")
+cat("- Downregulated genes (FDR<0.01, logFC<-2):", nrow(down_genes), "\n")
+cat("- Total significant:", nrow(up_genes) + nrow(down_genes), "\n")
+cat("- Percentage of genome:", round((nrow(up_genes) + nrow(down_genes))/nrow(neural_de_results)*100, 2), "%\n\n")
+
+if (exists("neural_gsea") && !is.null(neural_gsea) && nrow(neural_gsea) > 0) {
+  cat("PATHWAY ANALYSIS (EXPLORATORY):\n")
+  cat("- Significant pathways (FDR<0.01):", nrow(neural_gsea), "\n")
+  cat("- Top pathway:", neural_gsea@result$Description[1], "\n")
+  cat("- NES range:", round(min(neural_gsea@result$NES), 2), "to", round(max(neural_gsea@result$NES), 2), "\n\n")
+} else {
+  cat("PATHWAY ANALYSIS: No significant pathways with conservative thresholds\n\n")
 }
 
-cat("5. Potential therapeutic targets identified\n")
-cat("6. Distinct survival profile from other subtypes\n")
+cat("CRITICAL LIMITATIONS:\n")
+cat("1. Small sample size limits statistical reliability\n")
+cat("2. Extreme class imbalance (", n_neural, "vs", n_others, ")\n")
+cat("3. Potential confounding by tumor grade\n")
+cat("4. No validation cohort available\n")
+cat("5. Technical artifacts cannot be ruled out\n\n")
 
-cat("\nGENERATED FILES:\n")
-cat("- plots/Lesson25_Neural_Hyperactivation_Volcano.pdf\n")
+cat("RECOMMENDATIONS:\n")
+cat("1. ESSENTIAL: Independent validation in larger cohort (n≥30 Neural)\n")
+cat("2. Technical validation: qPCR, IHC for top genes\n")
+cat("3. Sample quality control: RNA integrity, histology review\n")
+cat("4. Matched control analysis by grade and batch\n")
+cat("5. Functional validation before therapeutic claims\n\n")
+
+cat("GENERATED FILES:\n")
+cat("- plots/Lesson25_Neural_Statistical_Volcano.pdf\n")
 cat("- plots/Lesson25_Neural_Signature_Heatmap.pdf\n")
 if (length(available_complement) > 5) {
   cat("- plots/Lesson25_Complement_Pathway_Heatmap.pdf\n")
 }
-cat("- plots/Lesson25_Neural_Survival_Analysis.pdf\n")
+cat("- plots/Lesson25_Neural_Survival_Analysis.pdf\n\n")
 
-cat("\nNEXT STEPS:\n")
-cat("- Validate complement pathway targets\n")
-cat("- Test complement inhibitors in vitro\n")
-cat("- Investigate neuroinflammation mechanisms\n")
-cat("- Develop Neural subtype-specific biomarkers\n")
+cat("CONCLUSION:\n")
+cat("Results are PRELIMINARY and require extensive validation.\n")
+cat("Current findings should NOT be used for clinical decisions.\n")
+cat("Further research needed to determine biological vs. technical origin.\n")
 
 # Clean up temporary files
 if (dir.exists("temp_clustering")) {
