@@ -151,8 +151,8 @@ if (all(c("OS", "Censor") %in% names(data))) {
     print(p_km_Grade$plot)
     
     ensure_plots_dir()
-    pdf(file.path("plots", "Lesson5_KM_by_PRS.pdf"), width = 9, height = 7)
-    print(p_km_PRS, newpage = FALSE)
+    pdf(file.path("plots", "Lesson5_KM_by_Grade.pdf"), width = 9, height = 7)
+    print(p_km_Grade, newpage = FALSE)
     dev.off()
     
   } else {
