@@ -131,16 +131,71 @@ save_plot_both(p_km, base_filename = "Lesson6_KM_Overall")
 # ===============================================================
 
 # 1. Look at the summary output. Which variables have a p-value < 0.05?
+# Modell zusammenfassen
+s <- summary(cox_model)
+# coefficients-Matrix holen
+coef_table <- as.data.frame(s$coefficients)
+sig_vars <- coef_table[coef_table$`Pr(>|z|)` < 0.05, ]
+sig_vars
+sig_names <- rownames(sig_vars)
+sig_names
 
 # 2. Interpret the Hazard Ratio for 'Age'. For every one-year increase in age,
 #    by how much does the hazard of death change, according to this model?
 
+#answer:
+#exp(coef) = 1.010455; Pr(>|z|)0.116587; theoretically about 1% per year, but its 
+#not signifficant and also Linearity Assumption for Continuous Variables (Age) didnt 
+#seem to work either, which is why the variablae age wont be helpful.
+
 # 3. Interpret the Hazard Ratio for 'IDH_mutation_statusMutant'. Does having
 #    the mutation increase or decrease the risk compared to wildtype?
+
+#answer: 
+#Being IDH wildtype increases the hazard (risk of death) by about 72% compared to 
+#being IDH mutated, and this result is statistically significant.
 
 # 4. Create a new model that omits a non-significant variable (like 'PRS_type').
 #    Use the formula `Surv(OS, Censor) ~ Age + Gender + Grade + ...` but without that term.
 #    How do the Hazard Ratios and p-values of the other variables change?
+required_cols2 <- c("OS", "Censor", "Age", "Grade",
+                    "IDH_mutation_status", "MGMTp_methylation_status", "PRS_type",
+                    "Chemo_status", "Radio_status")
+available_cols2 <- intersect(required_cols2, names(data))
+predictor_cols2 <- setdiff(available_cols2, c("OS", "Censor"))
+cox_formula2 <- as.formula(paste("Surv(OS, Censor) ~", paste(predictor_cols2, collapse=" + ")))
+tryCatch({
+  cox_model2 <- coxph(cox_formula2, data = data)
+  print(summary(cox_model2))
+  
+  summary(cox_model2)
+  if (!is.null(cox_model2)) {
+    p_forest2 <- ggforest(cox_model2, data = data)
+    save_plot_both(p_forest2, "Lesson6_Cox_Forest_Plot2")
+  }
+  
+}, error = function(e) {
+  cat("Error fitting Cox model:", e$message, "\n")
+  cat("This may be due to missing data or insufficient sample size for the variables included.\n")
+})
 
+if (exists("cox_model2")) {
+  cat("\n--- SECTION 2: CHECKING MODEL ASSUMPTIONS ---\n")
+  cat("\n--- Proportional Hazards Assumption Test (Schoenfeld residuals) ---\n")
+  ph_test2 <- cox.zph(cox_model2)
+  print(ph_test2)
+  
+  p_ph_test2 <- ggcoxzph(ph_test2)
+  print(p_ph_test2[[1]])
+  
+  cat("\n--- Linearity Assumption Test for Age ---\n")
+  predictor_cols_no_age2 <- setdiff(predictor_cols, "Age")
+  fml_spline2 <- as.formula(paste("Surv(OS, Censor) ~ pspline(Age) +",
+                                  paste(predictor_cols_no_age2, collapse=" + ")))
+  model_spline2 <- coxph(fml_spline2, data = data)
+  linearity_test2 <- anova(cox_model2, model_spline2)
+  print(linearity_test2)
+}
 # 5. If you have the 'survminer' package installed, try visualizing the Hazard Ratios
 #    with a forest plot: `survminer::ggforest(cox_model, data = data)`
+print(p_forest2)
