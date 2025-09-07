@@ -29,7 +29,6 @@ load_required_packages(c("ggplot2", "dplyr", "tidyr", "ggpubr", "rstatix", "read
 
 # Load and preprocess the clinical data using our helper function
 raw_data <- load_clinical_data("Data/ClinicalData.xlsx")
-
 # Use the new imputation function to handle missing data
 data <- impute_clinical_data(raw_data)
 
@@ -96,13 +95,50 @@ save_plot_both(p3, base_filename = "Lesson1_Grades_within_PRS")
 # 1. Create a histogram of OS (overall survival in days).
 #    Hint: Use the code for the Age histogram as a template. You'll need a
 #    'data_os' data frame first.
+p4 <- ggplot(data, aes(x=OS))+
+  geom_histogram(binwidth=100, fill="steelblue", color="white")+
+  labs(title="OS distribution", x="Overall survival", y="Count")+
+  theme_minimal()
+
+print(p4)
+save_plot_both(p4, base_filename = "Lesson1_OS_Distribution")
 
 # 2. Create a bar plot of MGMT methylation status by Gender.
+p5 <- ggplot(data, aes(x=MGMTp_methylation_status, fill=Gender))+
+  geom_bar(position="dodge")+
+  labs(title="MGMT Methylation Status by Gender", x="MGMT methylation", y="Count")+
+  theme_minimal()
+
+print(p5)
+save_plot_both(p5, base_filename = "Lesson1_MGMT_by_Gender")
 
 # 3. Customize one of your plots using different colors and labels.
 #    Search online for "ggplot colors" or "ggplot themes" for ideas.
+p6 <- ggplot(data, aes(x=MGMTp_methylation_status, fill=Gender))+
+  geom_bar(position="dodge")+
+  labs(x="MGMT methylation", y="Count")+
+  scale_fill_manual(values=c("Male"="#B2FBA5", "Female"="#CBC3E3"))+
+  ggtitle("MGMT Methylation Status by Gender")+
+  theme(plot.title=element_text(hjust=0.5, size=16, face="bold"))+
+  theme_minimal()
+
+print(p6)
+save_plot_both(p6, base_filename = "Lesson1_MGMT_by_Gender_color")
 
 # 4. Use str() and summary() to inspect columns you're unfamiliar with.
+summary(data$CGGA_ID)
+str(data$CGGA_ID)
+summary(data$Grade)
 
 # 5. The 'Histology' column is currently text. Can you create a bar plot
 #    showing the count of each Histology type?
+
+p7 <- ggplot(data, aes(Histology))+
+  geom_bar(position = "dodge") +
+  labs(title = "Histology distribution", x = "Histology", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+print(p7)
+save_plot_both(p7, base_filename = "Lesson1_histology_distribution")
+

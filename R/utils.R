@@ -148,7 +148,7 @@ impute_clinical_data <- function(df, seed = 123) {
   
   # Select columns for imputation
   vars_to_impute <- c(
-    "PRS_type", "Grade", "Age", "OS", "Censor",
+    "PRS_type", "Grade", "Age", "OS", "Censor", "Histology",
     "Radio_status", "Chemo_status", "IDH_mutation_status",
     "MGMTp_methylation_status"
   )
@@ -169,12 +169,12 @@ impute_clinical_data <- function(df, seed = 123) {
   for (col in numeric_cols) {
     if (col %in% names(df_complete)) df_complete[[col]] <- as.numeric(df_complete[[col]])
   }
-  factor_cols <- c("Grade", "PRS_type", "IDH_mutation_status", "MGMTp_methylation_status")
+  factor_cols <- c("Grade", "PRS_type","Histology", "IDH_mutation_status", "MGMTp_methylation_status")
   for (col in factor_cols) {
     if (col %in% names(df_complete)) {
       df_complete[[col]] <- factor(df_complete[[col]])
     }
-  }
+  }           
   
   return(df_complete)
 }
