@@ -88,6 +88,76 @@ if (all(c("OS", "Censor") %in% names(data))) {
 
 # 1. Perform a log-rank test to compare survival curves between 'PRS_type' groups.
 #    Is there a statistically significant difference?
+if (all(c("OS", "Censor") %in% names(data))) {
+  # Create a survival object from the main dataset for general use.
+  surv_obj <- Surv(data$OS, data$Censor)
+  
+  if (all(c("PRS_type") %in% names(data))) {
+    log_PRS <- survdiff(Surv(OS, Censor)~ PRS_type, data = data)
+    print(log_PRS)
+    
+    fit_PRS <- survfit(surv_obj ~ PRS_type, data = data)
+    p_km_PRS <- ggsurvplot(
+      fit_PRS,
+      data = data,
+      pval = TRUE,             # Add log-rank p-value
+      conf.int = TRUE,         # Add confidence intervals
+      risk.table = TRUE, #legend = "top",       # Add at-risk table
+      legend.title = "PRS-Type",
+      legend.labs = c("Primary", "Recurrent", "Secondary"),
+      legend = "top",          # Explicitly set legend position
+      palette = c("#00BA38", "#F8766D", "#C8024F"),
+      title = "Survival by PRS-Type",
+      xlab = "Time (days)"
+    )
+    print(p_km_PRS$plot)
+    
+    ensure_plots_dir()
+    pdf(file.path("plots", "Lesson5_KM_by_PRS.pdf"), width = 9, height = 7)
+    print(p_km_PRS, newpage = FALSE)
+    dev.off()
+    
+  } else {
+    cat("No suitable grouping variable found for log-rank test.\n")
+  }
+} else {
+  cat("Required columns 'OS' and/or 'Censor' not found.\n")
+}
 
 # 2. Run a log-rank test comparing survival between different 'Grade' categories.
 #    Remember to generate the Kaplan-Meier plot to visualize the result.
+if (all(c("OS", "Censor") %in% names(data))) {
+  # Create a survival object from the main dataset for general use.
+  surv_obj <- Surv(data$OS, data$Censor)
+  
+  if (all(c("Grade") %in% names(data))) {
+    log_Grade <- survdiff(Surv(OS, Censor)~ Grade, data = data)
+    print(log_Grade)
+    
+    fit_Grade <- survfit(surv_obj ~ Grade, data = data)
+    p_km_Grade <- ggsurvplot(
+      fit_Grade,
+      data = data,
+      pval = TRUE,             # Add log-rank p-value
+      conf.int = TRUE,         # Add confidence intervals
+      risk.table = TRUE, #legend = "top",       # Add at-risk table
+      legend.title = "Grade",
+      legend.labs = c("WHO II", "WHO III", "WHO IV"),
+      legend = "top",          # Explicitly set legend position
+      palette = c("#00BA38", "#F8766D", "#C8024F"),
+      title = "Survival by Grade",
+      xlab = "Time (days)"
+    )
+    print(p_km_Grade$plot)
+    
+    ensure_plots_dir()
+    pdf(file.path("plots", "Lesson5_KM_by_PRS.pdf"), width = 9, height = 7)
+    print(p_km_PRS, newpage = FALSE)
+    dev.off()
+    
+  } else {
+    cat("No suitable grouping variable found for log-rank test.\n")
+  }
+} else {
+  cat("Required columns 'OS' and/or 'Censor' not found.\n")
+}
