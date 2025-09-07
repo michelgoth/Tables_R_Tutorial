@@ -62,7 +62,7 @@ if ("IDH_mutation_status" %in% names(data)) {
     data = data,
     pval = TRUE,             # Add log-rank p-value
     conf.int = TRUE,         # Add confidence intervals
-    risk.table = TRUE, legend = "top",       # Add at-risk table
+    risk.table = TRUE, #legend = "top",       # Add at-risk table
     legend.title = "IDH Status",
     legend.labs = c("Mutant", "Wildtype"),
     legend = "top",          # Explicitly set legend position
@@ -91,6 +91,88 @@ if ("IDH_mutation_status" %in% names(data)) {
 
 # 1. Create a Kaplan-Meier plot comparing survival between patients with
 #    different 'MGMTp_methylation_status'.
-
+if (all(c("OS", "Censor") %in% names(data))) {
+  surv_obj <- Surv(time = as.numeric(data$OS), event = data$Censor)
+} else {
+  stop("ERROR: Required columns 'OS' and/or 'Censor' not found in data.")
+}
+if ("MGMTp_methylation_status" %in% names(data)) {
+  fit_mgmt <- survfit(surv_obj ~ MGMTp_methylation_status, data = data)
+  p_km_mgmt <- ggsurvplot(
+    fit_mgmt,
+    data = data,
+    pval = TRUE,             # Add log-rank p-value
+    conf.int = TRUE,         # Add confidence intervals
+    risk.table = TRUE, #legend = "top",       # Add at-risk table
+    legend.title = "MGMTp Methylation Status",
+    legend.labs = c("Methylated", "Unmethylated"),
+    legend = "top",          # Explicitly set legend position
+    palette = c("#00BA38", "#F8766D"),
+    title = "Survival by MGMTp Methylation Status",
+    xlab = "Time (days)"
+  )
+  print(p_km_mgmt$plot)
+  
+  ensure_plots_dir()
+  pdf(file.path("plots", "Lesson4_KM_by_MGMT.pdf"), width = 9, height = 7)
+  print(p_km_mgmt, newpage = FALSE)
+  dev.off()
+  
+} else {
+  cat("Column 'MGMTp_methylation_status' not found in data.\n")
+}
 # 2. Try creating another KM plot, this time grouping by 'PRS_type' or 'Grade'.
 #    Do you see a clear separation between the survival curves?
+#PRS_Type: 
+if ("PRS_type" %in% names(data)) {
+  fit_PRS <- survfit(surv_obj ~ PRS_type, data = data)
+  p_km_PRS <- ggsurvplot(
+    fit_PRS,
+    data = data,
+    pval = TRUE,             # Add log-rank p-value
+    conf.int = TRUE,         # Add confidence intervals
+    risk.table = TRUE, #legend = "top",       # Add at-risk table
+    legend.title = "PRS-Type",
+    legend.labs = c("Primary", "Recurrent", "Secondary"),
+    legend = "top",          # Explicitly set legend position
+    palette = c("#00BA38", "#F8766D", "#C8024F"),
+    title = "Survival by PRS-Type",
+    xlab = "Time (days)"
+  )
+  print(p_km_PRS$plot)
+  
+  ensure_plots_dir()
+  pdf(file.path("plots", "Lesson4_KM_by_PRS.pdf"), width = 9, height = 7)
+  print(p_km_PRS, newpage = FALSE)
+  dev.off()
+  
+} else {
+  cat("Column 'PRS_type' not found in data.\n")
+}
+
+#Grade:
+if ("Grade" %in% names(data)) {
+  fit_Grade <- survfit(surv_obj ~ Grade, data = data)
+  p_km_Grade <- ggsurvplot(
+    fit_Grade,
+    data = data,
+    pval = TRUE,             # Add log-rank p-value
+    conf.int = TRUE,         # Add confidence intervals
+    risk.table = TRUE, #legend = "top",       # Add at-risk table
+    legend.title = "Grade",
+    legend.labs = c("WHO II", "WHO III", "WHO IV"),
+    legend = "top",          # Explicitly set legend position
+    palette = c("#00BA38", "#F8766D", "#C8024F"),
+    title = "Survival by Grade",
+    xlab = "Time (days)"
+  )
+  print(p_km_Grade$plot)
+  
+  ensure_plots_dir()
+  pdf(file.path("plots", "Lesson4_KM_by_Grade.pdf"), width = 9, height = 7)
+  print(p_km_Grade, newpage = FALSE)
+  dev.off()
+  
+} else {
+  cat("Column 'Grade' not found in data.\n")
+}
