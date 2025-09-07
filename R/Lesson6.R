@@ -198,4 +198,5 @@ if (exists("cox_model2")) {
 }
 # 5. If you have the 'survminer' package installed, try visualizing the Hazard Ratios
 #    with a forest plot: `survminer::ggforest(cox_model, data = data)`
+print(p_forest)
 print(p_forest2)
