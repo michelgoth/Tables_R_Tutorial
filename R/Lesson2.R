@@ -74,14 +74,61 @@ if (all(c("Age", "Gender") %in% names(data))) {
 #    Hint: aes(x = OS). Don't forget to create a clean data frame first
 #    that handles missing values for OS.
 
+any(is.na(data))
+#if yes: df_os <- data %>% 
+#filter(!is.na(OS))
+if (all(c("OS", "Gender") %in% names(data))) {
+  data$OS <- as.numeric(data$OS)
+  p_os <- ggplot(data, aes(x = OS, fill = Gender)) +
+    geom_histogram(binwidth = 50, alpha = 0.6, position = "identity") +
+    theme_minimal() +
+    labs(title = "OS Distribution by Gender", x = "Overall Survival", y = "Count")
+  
+  print(p_os)
+  save_plot_both(p_os, "Lesson2_OS_Distribution")
+}
+
 # 2. Which Tumor Grade is most common in this dataset?
 #    Use the 'table()' function or create a 'geom_bar()' plot.
+if ("Grade" %in% names(data)) print(table(data$Grade))
 
+if ("Grade" %in% names(data)){
+  p_bg <- ggplot(data, aes(x=Grade))+
+    geom_bar()+
+    labs(title ="Grade Count", x="Grade", y="Count")+
+      theme_minimal()
+    
+    print(p_bg)
+    save_plot_both(p_bg, "Lesson2_Grade_Count")
+}
 # 3. Compare the distribution of 'Age' among the different 'PRS_type' groups.
 #    Hint: In your ggplot code, you can use 'fill = PRS_type' to create an
 #    overlapping histogram, or add 'facet_wrap(~ PRS_type)' to create
 #    separate plots for each presentation type.
+if (all(c("Age", "PRS_type") %in% names(data))) {
+  p_ap <- ggplot(data, aes(x = Age, fill = PRS_type)) +
+    geom_bar(position = "dodge") +
+    theme_minimal() +
+    labs(title = "Age Distribution by PRS-Type", x = "Age", y = "Count")
+  
+  print(p_ap)
+  save_plot_both(p_ap, "Lesson2_Age_by_PRSType")
+}
+#or
+if (all(c("Age", "PRS_type") %in% names(data))) {
+  p_ap_fw <- ggplot(data, aes(x = Age)) +
+    geom_bar()+
+    facet_wrap(~PRS_type)+
+    labs(title="Age by PRS-Type", x="Age")+
+    theme_minimal()
+  
+  print(p_ap_fw)
+  save_plot_both(p_ap_fw, "Lesson2_Age_by_PRSType_fw")
+}
 
 # 4. BONUS: Use the 'group_by()' and 'summarise()' functions from the 'dplyr'
 #    package to calculate the median age for each Tumor Grade.
 #    Example: data %>% group_by(Grade) %>% summarise(median_age = median(Age, na.rm=TRUE))
+data %>% 
+  group_by(Grade) %>% 
+  summarise(median_age = median(Age, na.rm=TRUE))
