@@ -73,8 +73,70 @@ if (all(c("Gender", "MGMTp_methylation_status") %in% names(data))) {
 #    First, create the contingency table using `table()`, then decide
 #    if a Chi-squared or Fisher's test is more appropriate.
 
+data$Chemo_status <- as.factor(data$Chemo_status) #utils.R puts Chemo_status nummeric, then the fill function wouldnt work
+
+if (all(c("PRS_type", "Chemo_status") %in% names(data))) {
+  table_PRS_chemo <- table(data$PRS_type, data$Chemo_status)
+  print(chisq.test(table_PRS_chemo))
+  
+  p_PRS_chemo <- ggplot(data, aes(x = PRS_type, fill = Chemo_status)) +
+    geom_bar(position = "dodge") +
+    labs(title = "PRS_type by Chemo_status", x = "PRS_type", y = "Count") +
+    theme_minimal()
+  print(p_PRS_chemo)
+  save_plot_both(p_PRS_chemo, base_filename = "Lesson7_PRS_by_Chemo")
+} else {
+  cat("Required columns 'PRS_type' and/or 'Chemo_status' not found in data.\n")
+}
+
+chi_res <- chisq.test(table_PRS_chemo)
+chi_res$expected
+
 # 2. When should you use Fisher's test instead of Chi-square?
 #    (Hint: Examine the counts in the contingency table from task #1).
+#	In the Chi-squared test, the expected frequency per table cell is calculated based on the observed counts and the assumed distributions.
+#	A common rule of thumb:
+# 	No expected frequency should be < 1
+#	At most 20% of the cells may have an expected frequency < 5
+#	If these conditions are violated, the test can be unreliable → in such cases, Fisher’s Exact Test is often used.
 
 # 3. Test for an association between 'Radio_status' and 'Grade'.
 #    Don't forget to visualize the result with a grouped bar plot.
+
+library(dplyr)
+library(ggpubr)
+library(scales)
+
+if (all(c("Radio_status", "Grade") %in% names(data))) {
+  table_Radio_Grade <- table(data$Radio_status, data$Grade)
+  print(chisq.test(table_Radio_Grade))
+  
+  # 1) Contingency table + Chi-square
+  table_Radio_Grade <- table(data$Radio_status, data$Grade)
+  chi_exRG <- chisq.test(table_Radio_Grade)
+  
+  # 2) Convert to long data frame
+  df <- as.data.frame(table_Radio_Grade)
+  names(df) <- c("Radio_status", "Grade", "n")
+  
+  p1 <- ggbarplot(
+    df, x = "Radio_status", y = "n", fill = "Grade",
+    position = position_fill()  # makes bars show proportions
+  ) +
+    ylab("Proportion") +
+    scale_y_continuous(labels = percent_format()) +
+    ggtitle("Radio status vs Grade",
+            subtitle = paste0("Chi-square's exact p = ", signif(chi_exRG$p.value, 3))) +
+    #theme_pubr()
+  scale_fill_viridis_d()
+  theme_minimal()
+
+  print(p1)
+  save_plot_both(p1, base_filename = "Lesson7_Radio_by_Grade")
+  
+} else {
+  cat("Required columns 'Radio_status' and/or 'Grade' not found in data.\n")
+}
+
+chi_exRG <- chisq.test(table_Radio_Grade)
+chi_exRG$expected
